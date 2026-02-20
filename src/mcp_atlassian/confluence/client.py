@@ -94,9 +94,6 @@ class ConfluenceClient:
             url=self.config.url,
             session=self.confluence._session,
             ssl_verify=self.config.ssl_verify,
-            client_cert=self.config.client_cert,
-            client_key=self.config.client_key,
-            client_key_password=self.config.client_key_password,
         )
 
         # Proxy configuration
