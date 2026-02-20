@@ -44,6 +44,16 @@ Dead code removal in `confluence/utils.py`:
 
 **Impact:** If you were using these directly, they no longer exist.
 
+### 4. Removed V2 API Methods (OAuth) ❌
+**Affected Class:** `ConfluenceV2Adapter`
+- `get_page_emoji()` - retrieve emoji from content properties
+- `set_page_emoji()` - set/remove page emoji
+- `_set_page_property()` - helper for setting properties
+- `_get_property()` - helper for retrieving properties
+- `get_page_views()` - get page view statistics
+
+**Impact:** OAuth users (Cloud Confluence) no longer have emoji or analytics support.
+
 ## Migration Guide
 
 | Feature | Workaround |
@@ -55,9 +65,10 @@ Dead code removal in `confluence/utils.py`:
 ## Code Removals Summary
 
 ```
-confluence/pages.py:  -214 lines (emoji + folder logic)
-confluence/utils.py:  -56 lines (emoji utility functions)
-Total:               -270 lines
+confluence/pages.py:     -214 lines (emoji + folder logic)
+confluence/utils.py:     -56 lines (emoji utility functions)
+confluence/v2_adapter.py: -206 lines (emoji + analytics for OAuth)
+Total:                   -476 lines
 ```
 
 ## Why These Changes?
