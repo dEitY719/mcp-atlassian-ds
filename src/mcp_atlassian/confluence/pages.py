@@ -8,7 +8,6 @@ from requests.exceptions import HTTPError
 from ..exceptions import MCPAtlassianAuthenticationError
 from ..models.confluence import ConfluencePage
 from .client import ConfluenceClient
-from .utils import emoji_to_hex_id, extract_emoji_from_property
 from .v2_adapter import ConfluenceV2Adapter
 
 logger = logging.getLogger("mcp-atlassian")
@@ -68,28 +67,14 @@ class PagesMixin(ConfluenceClient):
                     expand="body.storage,version,space,children.attachment",
                 )
 
-            # Check if API returned an error string instead of a dict
-            if isinstance(page, str):
-                error_msg = f"API returned error response: {page[:500]}"
-                raise Exception(error_msg)
-
             space_key = page.get("space", {}).get("key", "")
-            try:
-                content = page["body"]["storage"]["value"]
-            except (KeyError, TypeError) as e:
-                logger.warning(
-                    f"Page {page.get('id', 'unknown')} missing body.storage.value: {e}"
-                )
-                content = ""
+            content = page["body"]["storage"]["value"]
             processed_html, processed_markdown = self.preprocessor.process_html_content(
                 content, space_key=space_key, confluence_client=self.confluence
             )
 
             # Use the appropriate content format based on the convert_to_markdown flag
             page_content = processed_markdown if convert_to_markdown else processed_html
-
-            # Fetch page emoji from content properties
-            emoji = self._get_page_emoji(page_id)
 
             # Create and return the ConfluencePage model
             return ConfluencePage.from_api_response(
@@ -100,7 +85,6 @@ class PagesMixin(ConfluenceClient):
                 content_override=page_content,
                 content_format="storage" if not convert_to_markdown else "markdown",
                 is_cloud=self.config.is_cloud,
-                emoji=emoji,
             )
         except HTTPError as http_err:
             if http_err.response is not None and http_err.response.status_code in [
@@ -171,124 +155,6 @@ class PagesMixin(ConfluenceClient):
             logger.debug("Full exception details:", exc_info=True)
             return []
 
-    def _get_page_emoji(self, page_id: str) -> str | None:
-        """Get the page title emoji from content properties.
-
-        The page emoji (icon shown in navigation) is stored as a content property
-        with key 'emoji-title-published' or 'emoji-title-draft'.
-
-        Args:
-            page_id: The ID of the page
-
-        Returns:
-            The emoji character if set, None otherwise
-        """
-        try:
-            # Use v2 API for OAuth authentication
-            v2_adapter = self._v2_adapter
-            if v2_adapter:
-                return v2_adapter.get_page_emoji(page_id)
-
-            # For token/basic auth, use v1 API via atlassian library
-            properties = self.confluence.get_page_properties(page_id)
-            if not properties:
-                return None
-
-            results = properties.get("results", [])
-            for prop in results:
-                key = prop.get("key", "")
-                if key in ("emoji-title-published", "emoji-title-draft"):
-                    value = prop.get("value", {})
-                    return extract_emoji_from_property(value)
-
-            return None
-
-        except Exception as e:
-            logger.debug(f"Error fetching emoji for page {page_id}: {str(e)}")
-            return None
-
-    def _set_single_property(
-        self, page_id: str, property_key: str, value: str | None
-    ) -> bool:
-        """Set or remove a single page property via v1 API.
-
-        Args:
-            page_id: The ID of the page
-            property_key: The property key to set
-            value: The value to set, or None to delete the property
-
-        Returns:
-            True if the operation succeeded, False otherwise
-        """
-        try:
-            if value is None:
-                # Delete the property
-                try:
-                    self.confluence.delete_page_property(page_id, property_key)
-                except Exception as e:
-                    # Property might not exist, which is fine
-                    logger.debug(f"Could not delete property '{property_key}': {e}")
-                return True
-
-            # Set/update the property
-            property_data = {
-                "key": property_key,
-                "value": value,
-            }
-            self.confluence.set_page_property(page_id, property_data)
-            return True
-
-        except Exception as e:
-            logger.debug(
-                f"Error setting property '{property_key}' for page {page_id}: {str(e)}"
-            )
-            return False
-
-    def _set_page_emoji(self, page_id: str, emoji: str | None) -> bool:
-        """Set or remove the page title emoji.
-
-        The page emoji (icon shown in navigation) is stored as content properties.
-        Both 'emoji-title-published' and 'emoji-title-draft' are set to ensure
-        the emoji appears in both view and edit modes.
-
-        Args:
-            page_id: The ID of the page
-            emoji: The emoji character to set, or None to remove the emoji
-
-        Returns:
-            True if the operation succeeded, False otherwise
-        """
-        try:
-            # Use v2 API for OAuth authentication
-            v2_adapter = self._v2_adapter
-            if v2_adapter:
-                return v2_adapter.set_page_emoji(page_id, emoji)
-
-            # For token/basic auth, use v1 API via atlassian library
-            # Convert emoji to hex code, or None to delete
-            emoji_value = emoji_to_hex_id(emoji) if emoji else None
-
-            # Set both published and draft properties
-            published_ok = self._set_single_property(
-                page_id, "emoji-title-published", emoji_value
-            )
-            draft_ok = self._set_single_property(
-                page_id, "emoji-title-draft", emoji_value
-            )
-
-            if not published_ok:
-                logger.warning(
-                    f"Failed to set emoji-title-published for page {page_id}"
-                )
-            if not draft_ok:
-                logger.warning(f"Failed to set emoji-title-draft for page {page_id}")
-
-            return published_ok and draft_ok
-
-        except Exception as e:
-            logger.warning(f"Error setting emoji for page {page_id}: {str(e)}")
-            return False
-
     def get_page_by_title(
         self, space_key: str, title: str, *, convert_to_markdown: bool = True
     ) -> ConfluencePage | None:
@@ -317,22 +183,13 @@ class PagesMixin(ConfluenceClient):
                 )
                 return None
 
-            try:
-                content = page["body"]["storage"]["value"]
-            except (KeyError, TypeError) as e:
-                logger.warning(
-                    f"Page {page.get('id', 'unknown')} missing body.storage.value: {e}"
-                )
-                content = ""
+            content = page["body"]["storage"]["value"]
             processed_html, processed_markdown = self.preprocessor.process_html_content(
                 content, space_key=space_key, confluence_client=self.confluence
             )
 
             # Use the appropriate content format based on the convert_to_markdown flag
             page_content = processed_markdown if convert_to_markdown else processed_html
-
-            # Fetch page emoji from content properties
-            emoji = self._get_page_emoji(str(page.get("id", "")))
 
             # Create and return the ConfluencePage model
             return ConfluencePage.from_api_response(
@@ -343,7 +200,6 @@ class PagesMixin(ConfluenceClient):
                 content_override=page_content,
                 content_format="storage" if not convert_to_markdown else "markdown",
                 is_cloud=self.config.is_cloud,
-                emoji=emoji,
             )
 
         except KeyError as e:
@@ -388,13 +244,7 @@ class PagesMixin(ConfluenceClient):
 
         page_models = []
         for page in pages:
-            try:
-                content = page["body"]["storage"]["value"]
-            except (KeyError, TypeError) as e:
-                logger.warning(
-                    f"Page {page.get('id', 'unknown')} missing body.storage.value: {e}"
-                )
-                content = ""
+            content = page["body"]["storage"]["value"]
             processed_html, processed_markdown = self.preprocessor.process_html_content(
                 content, space_key=space_key, confluence_client=self.confluence
             )
@@ -434,7 +284,6 @@ class PagesMixin(ConfluenceClient):
         is_markdown: bool = True,
         enable_heading_anchors: bool = False,
         content_representation: str | None = None,
-        emoji: str | None = None,
     ) -> ConfluencePage:
         """
         Create a new page in a Confluence space.
@@ -447,7 +296,6 @@ class PagesMixin(ConfluenceClient):
             is_markdown: Whether the body content is in markdown format (default: True, keyword-only)
             enable_heading_anchors: Whether to enable automatic heading anchor generation (default: False, keyword-only)
             content_representation: Content format when is_markdown=False ('wiki' or 'storage', keyword-only)
-            emoji: Optional emoji character for the page title icon (keyword-only)
 
         Returns:
             ConfluencePage model containing the new page's data
@@ -498,10 +346,6 @@ class PagesMixin(ConfluenceClient):
             if not page_id:
                 raise ValueError("Create page response did not contain an ID")
 
-            # Set the page emoji if provided
-            if emoji:
-                self._set_page_emoji(page_id, emoji)
-
             return self.get_page_content(page_id)
         except Exception as e:
             logger.error(
@@ -523,7 +367,6 @@ class PagesMixin(ConfluenceClient):
         parent_id: str | None = None,
         enable_heading_anchors: bool = False,
         content_representation: str | None = None,
-        emoji: str | None = None,
     ) -> ConfluencePage:
         """
         Update an existing page in Confluence.
@@ -538,7 +381,6 @@ class PagesMixin(ConfluenceClient):
             parent_id: Optional new parent page ID (keyword-only)
             enable_heading_anchors: Whether to enable automatic heading anchor generation (default: False, keyword-only)
             content_representation: Content format when is_markdown=False ('wiki' or 'storage', keyword-only)
-            emoji: Optional emoji character for the page title icon (keyword-only). Pass empty string to remove emoji.
 
         Returns:
             ConfluencePage model containing the updated page's data
@@ -593,12 +435,6 @@ class PagesMixin(ConfluenceClient):
 
                 self.confluence.update_page(**update_kwargs)
 
-            # Set or remove the page emoji if provided
-            if emoji is not None:
-                # Empty string means remove emoji, otherwise set it
-                emoji_to_set = emoji if emoji else None
-                self._set_page_emoji(page_id, emoji_to_set)
-
             # After update, refresh the page data
             return self.get_page_content(page_id)
         except Exception as e:
@@ -613,76 +449,48 @@ class PagesMixin(ConfluenceClient):
         expand: str = "version",
         *,
         convert_to_markdown: bool = True,
-        include_folders: bool = True,
     ) -> list[ConfluencePage]:
         """
-        Get child pages and folders of a specific Confluence page.
+        Get child pages of a specific Confluence page.
 
         Args:
             page_id: The ID of the parent page
             start: The starting index for pagination
-            limit: Maximum number of child items to return
+            limit: Maximum number of child pages to return
             expand: Fields to expand in the response
             convert_to_markdown: When True, returns content in markdown format,
                                otherwise returns raw HTML (keyword-only)
-            include_folders: When True, also returns child folders (keyword-only)
 
         Returns:
-            List of ConfluencePage models containing the child pages and folders
+            List of ConfluencePage models containing the child pages
         """
         try:
             # Use the Atlassian Python API's get_page_child_by_type method
-            # First, get child pages
-            page_results = self.confluence.get_page_child_by_type(
+            results = self.confluence.get_page_child_by_type(
                 page_id=page_id, type="page", start=start, limit=limit, expand=expand
             )
 
-            # Handle both pagination modes for pages
-            if isinstance(page_results, dict) and "results" in page_results:
-                child_items = page_results.get("results", [])
-            else:
-                child_items = page_results or []
-
-            # Also get child folders if requested
-            if include_folders:
-                try:
-                    folder_results = self.confluence.get_page_child_by_type(
-                        page_id=page_id,
-                        type="folder",
-                        start=start,
-                        limit=limit,
-                        expand=expand,
-                    )
-
-                    # Handle both pagination modes for folders
-                    if isinstance(folder_results, dict) and "results" in folder_results:
-                        child_folders = folder_results.get("results", [])
-                    else:
-                        child_folders = folder_results or []
-
-                    # Combine pages and folders
-                    child_items = child_items + child_folders
-                except Exception as folder_err:
-                    # Log but don't fail if folder fetching fails
-                    # (e.g., older Confluence versions might not support folders)
-                    logger.debug(
-                        f"Could not fetch child folders for page {page_id}: {folder_err}"
-                    )
-
             # Process results
             page_models = []
+
+            # Handle both pagination modes
+            if isinstance(results, dict) and "results" in results:
+                child_pages = results.get("results", [])
+            else:
+                child_pages = results or []
+
             space_key = ""
 
             # Get space key from the first result if available
-            if child_items and "space" in child_items[0]:
-                space_key = child_items[0].get("space", {}).get("key", "")
+            if child_pages and "space" in child_pages[0]:
+                space_key = child_pages[0].get("space", {}).get("key", "")
 
-            # Process each child item (page or folder)
-            for item in child_items:
+            # Process each child page
+            for page in child_pages:
                 # Only process content if we have "body" expanded
                 content_override = None
-                if "body" in item and convert_to_markdown:
-                    content = item.get("body", {}).get("storage", {}).get("value", "")
+                if "body" in page and convert_to_markdown:
+                    content = page.get("body", {}).get("storage", {}).get("value", "")
                     if content:
                         _, processed_markdown = self.preprocessor.process_html_content(
                             content,
@@ -691,9 +499,9 @@ class PagesMixin(ConfluenceClient):
                         )
                         content_override = processed_markdown
 
-                # Create the page model (works for both pages and folders)
+                # Create the page model
                 page_model = ConfluencePage.from_api_response(
-                    item,
+                    page,
                     base_url=self.config.url,
                     include_body=True,
                     content_override=content_override,
