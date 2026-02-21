@@ -8,11 +8,8 @@ from .urls import is_atlassian_cloud_url
 logger = logging.getLogger("mcp-atlassian.utils.environment")
 
 
-def get_available_services(
-    headers: dict[str, str] | None = None,
-) -> dict[str, bool | None]:
-    """Determine which services are available based on environment variables and optional headers."""
-    headers = headers or {}
+def get_available_services() -> dict[str, bool | None]:
+    """Determine which services are available based on environment variables."""
     confluence_url = os.getenv("CONFLUENCE_URL")
     confluence_is_setup = False
     if confluence_url:
@@ -68,18 +65,12 @@ def get_available_services(
             "Using Confluence minimal OAuth configuration - expecting user-provided tokens via headers"
         )
 
-    if not confluence_is_setup:
-        confluence_token = headers.get("X-Atlassian-Confluence-Personal-Token")
-        confluence_url_header = headers.get("X-Atlassian-Confluence-Url")
-
-        if confluence_token and confluence_url_header:
-            confluence_is_setup = True
-            logger.info("Using Confluence authentication from header personal token")
-
     jira_url = os.getenv("JIRA_URL")
     jira_is_setup = False
     if jira_url:
         is_cloud = is_atlassian_cloud_url(jira_url)
+
+        # OAuth check (highest precedence, applies to Cloud)
         if all(
             [
                 os.getenv("ATLASSIAN_OAUTH_CLIENT_ID"),
@@ -126,14 +117,6 @@ def get_available_services(
         logger.info(
             "Using Jira minimal OAuth configuration - expecting user-provided tokens via headers"
         )
-
-    if not jira_is_setup:
-        jira_token = headers.get("X-Atlassian-Jira-Personal-Token")
-        jira_url_header = headers.get("X-Atlassian-Jira-Url")
-
-        if jira_token and jira_url_header:
-            jira_is_setup = True
-            logger.info("Using Jira authentication from header personal token")
 
     if not confluence_is_setup:
         logger.info(
