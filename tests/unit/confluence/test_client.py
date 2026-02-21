@@ -49,9 +49,6 @@ def test_init_with_basic_auth():
             url="https://test.atlassian.net/wiki",
             session=mock_confluence.return_value._session,
             ssl_verify=True,
-            client_cert=None,
-            client_key=None,
-            client_key_password=None,
         )
 
 
@@ -95,9 +92,6 @@ def test_init_with_token_auth():
             url="https://confluence.example.com",
             session=mock_confluence.return_value._session,
             ssl_verify=False,
-            client_cert=None,
-            client_key=None,
-            client_key_password=None,
         )
 
 
