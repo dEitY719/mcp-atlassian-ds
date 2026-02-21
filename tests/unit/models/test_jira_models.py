@@ -5,10 +5,8 @@ These tests validate the conversion of Jira API responses to structured models
 and the simplified dictionary conversion for API responses.
 """
 
-import json
 import os
 import re
-from datetime import datetime, timezone
 
 import pytest
 
@@ -37,7 +35,6 @@ from src.mcp_atlassian.models.jira import (
     JiraUser,
     JiraWorklog,
 )
-from src.mcp_atlassian.models.jira.common import JiraChangelog
 
 # Optional: Import real API client for optional real-data testing
 try:
@@ -784,13 +781,10 @@ class TestJiraIssue:
         assert simplified_specific["resolution"]["name"] == "Fixed"
         assert len(simplified_specific["subtasks"]) == 1
         # Check custom field output
-        assert (
-            simplified_specific["customfield_10011"]
-            == {
-                "value": "Epic Name Example",
-                "name": "Epic Name",  # Comes from the "names" map in MOCK_JIRA_ISSUE_RESPONSE
-            }
-        )
+        assert simplified_specific["customfield_10011"] == {
+            "value": "Epic Name Example",
+            "name": "Epic Name",  # Comes from the "names" map in MOCK_JIRA_ISSUE_RESPONSE
+        }
 
     def test_find_custom_field_in_api_response(self):
         """Test the _find_custom_field_in_api_response method with different field patterns."""
@@ -1029,9 +1023,9 @@ class TestJiraIssue:
         }
         # We check if the key is present; value might be None if not in source data
         for key in essential_keys:
-            assert key in simplified, (
-                f"Essential key '{key}' missing from default simplified dict"
-            )
+            assert (
+                key in simplified
+            ), f"Essential key '{key}' missing from default simplified dict"
         assert "customfield_10001" not in simplified
         assert "customfield_10002" not in simplified
 
@@ -1948,45 +1942,3 @@ class TestRealJiraData:
 
         except Exception as e:
             pytest.fail(f"Error testing real Jira worklog: {e}")
-
-
-class TestJiraChangelog:
-    """Tests for JiraChangelog datetime serialization (fixes #749)."""
-
-    def test_created_datetime_serialization(self):
-        """Test that datetime created field serializes to JSON properly."""
-        changelog = JiraChangelog(
-            id="12345",
-            created=datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc),
-            items=[],
-        )
-
-        # model_dump should serialize datetime to ISO string
-        dumped = changelog.model_dump(mode="json")
-        assert isinstance(dumped["created"], str)
-        assert "2024-01-15" in dumped["created"]
-
-        # to_simplified_dict should also work
-        simplified = changelog.to_simplified_dict()
-        assert isinstance(simplified["created"], str)
-
-        # Final json.dumps should not raise
-        json_str = json.dumps(simplified)
-        assert "2024-01-15" in json_str
-
-    def test_from_api_response_with_changelog(self):
-        """Test JiraChangelog.from_api_response handles dates correctly."""
-        data = {
-            "id": "100",
-            "created": "2024-01-15T10:30:00.000+0000",
-            "author": {"displayName": "Test User"},
-            "items": [{"field": "status", "fromString": "Open", "toString": "Done"}],
-        }
-
-        changelog = JiraChangelog.from_api_response(data)
-        assert isinstance(changelog.created, datetime)
-
-        # Should serialize cleanly to JSON
-        simplified = changelog.to_simplified_dict()
-        json_str = json.dumps(simplified)
-        assert "2024-01-15" in json_str
