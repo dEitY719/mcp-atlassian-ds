@@ -166,7 +166,7 @@ class TestMCPProtocolIntegration:
                 atlassian_mcp_server.get_tools = mock_get_tools
 
                 # Get filtered tools
-                tools = await atlassian_mcp_server._list_tools_mcp()
+                tools = await atlassian_mcp_server._mcp_list_tools()
 
                 # Assert all tools are available
                 tool_names = [tool.name for tool in tools]
@@ -246,7 +246,7 @@ class TestMCPProtocolIntegration:
             atlassian_mcp_server.get_tools = mock_get_tools
 
             # Get filtered tools
-            tools = await atlassian_mcp_server._list_tools_mcp()
+            tools = await atlassian_mcp_server._mcp_list_tools()
 
             # Assert only read tools are available
             tool_names = [tool.name for tool in tools]
@@ -317,7 +317,7 @@ class TestMCPProtocolIntegration:
             atlassian_mcp_server.get_tools = mock_get_tools
 
             # Get filtered tools
-            tools = await atlassian_mcp_server._list_tools_mcp()
+            tools = await atlassian_mcp_server._mcp_list_tools()
 
             # Assert only enabled tools are available
             tool_names = [tool.name for tool in tools]
@@ -383,7 +383,7 @@ class TestMCPProtocolIntegration:
             atlassian_mcp_server.get_tools = mock_get_tools
 
             # Get filtered tools
-            tools = await atlassian_mcp_server._list_tools_mcp()
+            tools = await atlassian_mcp_server._mcp_list_tools()
 
             # Assert no tools are available when services not configured
             assert len(tools) == 0
@@ -548,9 +548,9 @@ class TestMCPProtocolIntegration:
                 token_added = True
             except AttributeError:
                 token_added = False
-            assert not token_added, (
-                "user_atlassian_token should not be set for non-MCP paths"
-            )
+            assert (
+                not token_added
+            ), "user_atlassian_token should not be set for non-MCP paths"
             return JSONResponse({"status": "ok"})
 
         # Process request
@@ -851,7 +851,7 @@ class TestMCPProtocolIntegration:
             atlassian_mcp_server.get_tools = mock_get_tools
 
             # Get filtered tools
-            tools = await atlassian_mcp_server._list_tools_mcp()
+            tools = await atlassian_mcp_server._mcp_list_tools()
 
             # Only jira_get_issue should pass all filters
             tool_names = [tool.name for tool in tools]
@@ -870,7 +870,7 @@ class TestMCPProtocolIntegration:
         atlassian_mcp_server.get_tools = mock_get_tools
 
         # Get filtered tools
-        tools = await atlassian_mcp_server._list_tools_mcp()
+        tools = await atlassian_mcp_server._mcp_list_tools()
 
         # Should return empty list
         assert tools == []
