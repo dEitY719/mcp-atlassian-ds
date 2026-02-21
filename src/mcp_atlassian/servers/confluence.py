@@ -17,14 +17,11 @@ logger = logging.getLogger(__name__)
 
 confluence_mcp = FastMCP(
     name="Confluence MCP Service",
-    instructions="Provides tools for interacting with Atlassian Confluence.",
+    description="Provides tools for interacting with Atlassian Confluence.",
 )
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "read"},
-    annotations={"title": "Search Content", "readOnlyHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "read"})
 async def search(
     ctx: Context,
     query: Annotated[
@@ -113,14 +110,11 @@ async def search(
     return json.dumps(search_results, indent=2, ensure_ascii=False)
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "read"},
-    annotations={"title": "Get Page", "readOnlyHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "read"})
 async def get_page(
     ctx: Context,
     page_id: Annotated[
-        str | int | None,
+        str | None,
         Field(
             description=(
                 "Confluence page ID (numeric ID, can be found in the page URL). "
@@ -190,9 +184,8 @@ async def get_page(
                 "page_id was provided; title and space_key parameters will be ignored."
             )
         try:
-            page_id_str = str(page_id)
             page_object = confluence_fetcher.get_page_content(
-                page_id_str, convert_to_markdown=convert_to_markdown
+                page_id, convert_to_markdown=convert_to_markdown
             )
         except Exception as e:
             logger.error(f"Error fetching page by ID '{page_id}': {e}")
@@ -233,10 +226,7 @@ async def get_page(
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "read"},
-    annotations={"title": "Get Page Children", "readOnlyHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "read"})
 async def get_page_children(
     ctx: Context,
     parent_id: Annotated[
@@ -255,7 +245,7 @@ async def get_page_children(
     limit: Annotated[
         int,
         Field(
-            description="Maximum number of child items to return (1-50)",
+            description="Maximum number of child pages to return (1-50)",
             default=25,
             ge=1,
             le=50,
@@ -279,28 +269,20 @@ async def get_page_children(
         int,
         Field(description="Starting index for pagination (0-based)", default=0, ge=0),
     ] = 0,
-    include_folders: Annotated[
-        bool,
-        Field(
-            description="Whether to include child folders in addition to child pages",
-            default=True,
-        ),
-    ] = True,
 ) -> str:
-    """Get child pages and folders of a specific Confluence page.
+    """Get child pages of a specific Confluence page.
 
     Args:
         ctx: The FastMCP context.
         parent_id: The ID of the parent page.
         expand: Fields to expand.
-        limit: Maximum number of child items.
+        limit: Maximum number of child pages.
         include_content: Whether to include page content.
         convert_to_markdown: Convert content to markdown if include_content is true.
         start: Starting index for pagination.
-        include_folders: Whether to include child folders (default: True).
 
     Returns:
-        JSON string representing a list of child page and folder objects.
+        JSON string representing a list of child page objects.
     """
     confluence_fetcher = await get_confluence_fetcher(ctx)
     if include_content and "body" not in expand:
@@ -313,7 +295,6 @@ async def get_page_children(
             limit=limit,
             expand=expand,
             convert_to_markdown=convert_to_markdown,
-            include_folders=include_folders,
         )
         child_pages = [page.to_simplified_dict() for page in pages]
         result = {
@@ -333,10 +314,7 @@ async def get_page_children(
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "read"},
-    annotations={"title": "Get Comments", "readOnlyHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "read"})
 async def get_comments(
     ctx: Context,
     page_id: Annotated[
@@ -365,10 +343,7 @@ async def get_comments(
     return json.dumps(formatted_comments, indent=2, ensure_ascii=False)
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "read"},
-    annotations={"title": "Get Labels", "readOnlyHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "read"})
 async def get_labels(
     ctx: Context,
     page_id: Annotated[
@@ -397,10 +372,7 @@ async def get_labels(
     return json.dumps(formatted_labels, indent=2, ensure_ascii=False)
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "write"},
-    annotations={"title": "Add Label", "destructiveHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "write"})
 @check_write_access
 async def add_label(
     ctx: Context,
@@ -426,10 +398,7 @@ async def add_label(
     return json.dumps(formatted_labels, indent=2, ensure_ascii=False)
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "write"},
-    annotations={"title": "Create Page", "destructiveHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "write"})
 @check_write_access
 async def create_page(
     ctx: Context,
@@ -468,13 +437,6 @@ async def create_page(
             default=False,
         ),
     ] = False,
-    emoji: Annotated[
-        str | None,
-        Field(
-            description="(Optional) Page title emoji (icon shown in navigation). Can be any emoji character like '📝', '🚀', '📚'. Set to null/None to remove.",
-            default=None,
-        ),
-    ] = None,
 ) -> str:
     """Create a new Confluence page.
 
@@ -486,7 +448,6 @@ async def create_page(
         parent_id: Optional parent page ID.
         content_format: The format of the content ('markdown', 'wiki', or 'storage').
         enable_heading_anchors: Whether to enable heading anchors (markdown only).
-        emoji: Optional page title emoji (icon shown in navigation).
 
     Returns:
         JSON string representing the created page object.
@@ -516,11 +477,10 @@ async def create_page(
         body=content,
         parent_id=parent_id,
         is_markdown=is_markdown,
-        enable_heading_anchors=enable_heading_anchors
-        if content_format == "markdown"
-        else False,
+        enable_heading_anchors=(
+            enable_heading_anchors if content_format == "markdown" else False
+        ),
         content_representation=content_representation,
-        emoji=emoji,
     )
     result = page.to_simplified_dict()
     return json.dumps(
@@ -530,10 +490,7 @@ async def create_page(
     )
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "write"},
-    annotations={"title": "Update Page", "destructiveHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "write"})
 @check_write_access
 async def update_page(
     ctx: Context,
@@ -570,13 +527,6 @@ async def update_page(
             default=False,
         ),
     ] = False,
-    emoji: Annotated[
-        str | None,
-        Field(
-            description="(Optional) Page title emoji (icon shown in navigation). Can be any emoji character like '📝', '🚀', '📚'. Set to null/None to remove.",
-            default=None,
-        ),
-    ] = None,
 ) -> str:
     """Update an existing Confluence page.
 
@@ -590,7 +540,6 @@ async def update_page(
         parent_id: Optional new parent page ID.
         content_format: The format of the content ('markdown', 'wiki', or 'storage').
         enable_heading_anchors: Whether to enable heading anchors (markdown only).
-        emoji: Optional page title emoji (icon shown in navigation).
 
     Returns:
         JSON string representing the updated page object.
@@ -622,11 +571,10 @@ async def update_page(
         version_comment=version_comment,
         is_markdown=is_markdown,
         parent_id=parent_id,
-        enable_heading_anchors=enable_heading_anchors
-        if content_format == "markdown"
-        else False,
+        enable_heading_anchors=(
+            enable_heading_anchors if content_format == "markdown" else False
+        ),
         content_representation=content_representation,
-        emoji=emoji,
     )
     page_data = updated_page.to_simplified_dict()
     return json.dumps(
@@ -636,10 +584,7 @@ async def update_page(
     )
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "write"},
-    annotations={"title": "Delete Page", "destructiveHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "write"})
 @check_write_access
 async def delete_page(
     ctx: Context,
@@ -681,10 +626,7 @@ async def delete_page(
     return json.dumps(response, indent=2, ensure_ascii=False)
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "write"},
-    annotations={"title": "Add Comment", "destructiveHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "write"})
 @check_write_access
 async def add_comment(
     ctx: Context,
@@ -734,10 +676,7 @@ async def add_comment(
     return json.dumps(response, indent=2, ensure_ascii=False)
 
 
-@confluence_mcp.tool(
-    tags={"confluence", "read"},
-    annotations={"title": "Search User", "readOnlyHint": True},
-)
+@confluence_mcp.tool(tags={"confluence", "read"})
 async def search_user(
     ctx: Context,
     query: Annotated[
@@ -802,73 +741,6 @@ async def search_user(
             {
                 "error": f"An unexpected error occurred while searching for users: {str(e)}"
             },
-            indent=2,
-            ensure_ascii=False,
-        )
-
-
-@confluence_mcp.tool(
-    tags={"confluence", "read", "analytics"},
-    annotations={"title": "Get Page Views", "readOnlyHint": True},
-)
-async def confluence_get_page_views(
-    ctx: Context,
-    page_id: Annotated[
-        str,
-        Field(
-            description=(
-                "Confluence page ID (numeric ID, can be found in the page URL). "
-                "For example, in 'https://example.atlassian.net/wiki/spaces/TEAM/pages/123456789/Page+Title', "
-                "the page ID is '123456789'."
-            )
-        ),
-    ],
-    include_title: Annotated[
-        bool,
-        Field(description="Whether to fetch and include the page title"),
-    ] = True,
-) -> str:
-    """Get view statistics for a Confluence page.
-
-    Note: This tool is only available for Confluence Cloud. Server/Data Center
-    instances do not support the Analytics API.
-
-    Args:
-        ctx: The FastMCP context.
-        page_id: The Confluence page ID.
-        include_title: Whether to include the page title in the response.
-
-    Returns:
-        JSON string with page view statistics including total views and last viewed date.
-    """
-    confluence_fetcher = await get_confluence_fetcher(ctx)
-    try:
-        result = confluence_fetcher.get_page_views(
-            page_id=page_id,
-            include_title=include_title,
-        )
-        return json.dumps(result.to_simplified_dict(), indent=2, ensure_ascii=False)
-    except MCPAtlassianAuthenticationError as e:
-        logger.error(f"Authentication error getting page views: {e}")
-        return json.dumps(
-            {
-                "error": "Authentication failed. Please check your credentials.",
-                "details": str(e),
-            },
-            indent=2,
-            ensure_ascii=False,
-        )
-    except ValueError as e:
-        logger.error(f"Error getting page views for {page_id}: {e}")
-        return json.dumps(
-            {"error": str(e), "page_id": page_id},
-            indent=2,
-            ensure_ascii=False,
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error getting page views for {page_id}: {e}")
-        return json.dumps(
-            {"error": f"Failed to get page views: {e}", "page_id": page_id},
             indent=2,
             ensure_ascii=False,
         )
