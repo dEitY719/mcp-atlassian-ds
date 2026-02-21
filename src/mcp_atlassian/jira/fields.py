@@ -317,7 +317,7 @@ class FieldsMixin(JiraClient, EpicOperationsProto, UsersOperationsProto):
                     or field_name == "epic"
                     or "epic link" in field_name
                     or field_custom == "com.pyxis.greenhopper.jira:gh-epic-link"
-                    or field_id == "customfield_10014"
+                    or field_id == "customfield_10201"
                 ):  # Common in Jira Cloud
                     field_ids["epic_link"] = field_id
                     # For backward compatibility
@@ -330,7 +330,7 @@ class FieldsMixin(JiraClient, EpicOperationsProto, UsersOperationsProto):
                     or field_name == "epic title"
                     or "epic name" in field_name
                     or field_custom == "com.pyxis.greenhopper.jira:gh-epic-label"
-                    or field_id == "customfield_10011"
+                    or field_id == "customfield_10203"
                 ):  # Common in Jira Cloud
                     field_ids["epic_name"] = field_id
                     # For backward compatibility
