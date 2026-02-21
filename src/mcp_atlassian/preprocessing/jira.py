@@ -12,26 +12,22 @@ logger = logging.getLogger("mcp-atlassian")
 class JiraPreprocessor(BasePreprocessor):
     """Handles text preprocessing for Jira content."""
 
-    def __init__(
-        self, base_url: str = "", disable_translation: bool = False, **kwargs: Any
-    ) -> None:
+    def __init__(self, base_url: str = "", **kwargs: Any) -> None:
         """
         Initialize the Jira text preprocessor.
 
         Args:
             base_url: Base URL for Jira API
-            disable_translation: If True, disable markup translation between formats
             **kwargs: Additional arguments for the base class
         """
         super().__init__(base_url=base_url, **kwargs)
-        self.disable_translation = disable_translation
 
     def clean_jira_text(self, text: str) -> str:
         """
         Clean Jira text content by:
         1. Processing user mentions and links
-        2. Converting Jira markup to markdown (if translation enabled)
-        3. Converting HTML/wiki markup to markdown (if translation enabled)
+        2. Converting Jira markup to markdown
+        3. Converting HTML/wiki markup to markdown
         """
         if not text:
             return ""
@@ -43,13 +39,11 @@ class JiraPreprocessor(BasePreprocessor):
         # Process Jira smart links
         text = self._process_smart_links(text)
 
-        # Convert markup only if translation is enabled
-        if not self.disable_translation:
-            # First convert any Jira markup to Markdown
-            text = self.jira_to_markdown(text)
+        # First convert any Jira markup to Markdown
+        text = self.jira_to_markdown(text)
 
-            # Then convert any remaining HTML to markdown
-            text = self._convert_html_to_markdown(text)
+        # Then convert any remaining HTML to markdown
+        text = self._convert_html_to_markdown(text)
 
         return text.strip()
 
@@ -115,13 +109,10 @@ class JiraPreprocessor(BasePreprocessor):
             input_text: Text in Jira markup format
 
         Returns:
-            Text in Markdown format (or original text if translation disabled)
+            Text in Markdown format
         """
         if not input_text:
             return ""
-
-        if self.disable_translation:
-            return input_text
 
         # Block quotes
         output = re.sub(r"^bq\.(.*?)$", r"> \1\n", input_text, flags=re.MULTILINE)
@@ -247,13 +238,10 @@ class JiraPreprocessor(BasePreprocessor):
             input_text: Text in Markdown format
 
         Returns:
-            Text in Jira markup format (or original text if translation disabled)
+            Text in Jira markup format
         """
         if not input_text:
             return ""
-
-        if self.disable_translation:
-            return input_text
 
         # Save code blocks to prevent recursive processing
         code_blocks = []
@@ -307,55 +295,41 @@ class JiraPreprocessor(BasePreprocessor):
             flags=re.MULTILINE,
         )
 
-        # Headers with # prefix - require space after # to distinguish from Jira lists
-        # Fixes issue #786: #item should not become h1.item (it's a Jira numbered list)
+        # Headers with # prefix
         output = re.sub(
-            r"^([#]+) (.*)$",
-            lambda match: f"h{len(match.group(1))}. " + match.group(2),
+            r"^([#]+)(.*?)$",
+            lambda match: f"h{len(match.group(1))}." + match.group(2),
             output,
             flags=re.MULTILINE,
         )
 
-        # Bold and italic - skip lines starting with asterisks+space (Jira list syntax)
-        # Fixes issue #786: ** item should not be converted (it's a Jira nested list)
-        def convert_bold_italic_line(line: str) -> str:
-            # Skip if line starts with asterisks/underscores followed by space (list syntax)
-            if re.match(r"^[*_]+\s", line):
-                return line
-            # Apply bold/italic conversion
-            return re.sub(
-                r"([*_]+)(.*?)\1",
-                lambda m: ("_" if len(m.group(1)) == 1 else "*")
-                + m.group(2)
-                + ("_" if len(m.group(1)) == 1 else "*"),
-                line,
-            )
-
-        lines = output.split("\n")
-        output = "\n".join(convert_bold_italic_line(line) for line in lines)
+        # Bold and italic
+        output = re.sub(
+            r"([*_]+)(.*?)\1",
+            lambda match: ("_" if len(match.group(1)) == 1 else "*")
+            + match.group(2)
+            + ("_" if len(match.group(1)) == 1 else "*"),
+            output,
+        )
 
         # Multi-level bulleted list
-        def bulleted_list_fn(match: re.Match) -> str:
-            ident = len(match.group(1)) if match.group(1) else 0
-            level = ident // 2 + 1
-            return str("*" * level + " " + match.group(2))
-
         output = re.sub(
-            r"^(\s+)?[-+*] (.*)$",
-            bulleted_list_fn,
+            r"^(\s*)- (.*)$",
+            lambda match: (
+                "* " + match.group(2)
+                if not match.group(1)
+                else "  " * (len(match.group(1)) // 2) + "* " + match.group(2)
+            ),
             output,
             flags=re.MULTILINE,
         )
 
         # Multi-level numbered list
-        def numbered_list_fn(match: re.Match) -> str:
-            ident = len(match.group(1)) if match.group(1) else 0
-            level = ident // 2 + 1
-            return str("#" * level + " " + match.group(2))
-
         output = re.sub(
-            r"^(\s+)?\d+\. (.*)$",
-            numbered_list_fn,
+            r"^(\s+)1\. (.*)$",
+            lambda match: "#" * (int(len(match.group(1)) / 4) + 2)
+            + " "
+            + match.group(2),
             output,
             flags=re.MULTILINE,
         )
