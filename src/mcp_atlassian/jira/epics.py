@@ -39,7 +39,7 @@ class EpicsMixin(
         """
         try:
             # If we already have both epic fields, no need to search
-            if all(field in field_ids for field in ["epic_name", "epic_link"]):
+            if all(field in field_ids for field in ["epic_name", "epic_link", "Epic Link", "Epic Name"]):
                 return
 
             # Find an Epic in the system
@@ -239,7 +239,7 @@ class EpicsMixin(
             return field_ids["Epic Name"]
 
         # Strategy 2: Check common field IDs used across different Jira instances
-        common_ids = ["customfield_10011", "customfield_10005", "customfield_10004"]
+        common_ids = ["customfield_10203", "customfield_10011", "customfield_10005", "customfield_10004"]
         for field_id in common_ids:
             if field_id in field_ids.values():
                 logger.debug(f"Using common Epic Name field ID: {field_id}")
@@ -333,23 +333,7 @@ class EpicsMixin(
             # Get the dynamic field IDs for this Jira instance
             field_ids = self.get_field_ids_to_epic()
 
-            # Try the parent field first (if discovered or natively supported)
-            if "parent" in field_ids or "parent" not in field_ids:
-                try:
-                    fields = {"parent": {"key": epic_key}}
-                    self.jira.update_issue(
-                        issue_key=issue_key, update={"fields": fields}
-                    )
-                    logger.info(
-                        f"Successfully linked {issue_key} to {epic_key} using parent field"
-                    )
-                    return self.get_issue(issue_key)
-                except Exception as e:
-                    logger.info(
-                        f"Couldn't link using parent field: {str(e)}. Trying discovered fields..."
-                    )
-
-            # Try using the discovered Epic Link field
+            # Try using the discovered Epic Link field first
             if "epic_link" in field_ids:
                 try:
                     epic_link_fields: dict[str, str] = {
@@ -367,10 +351,27 @@ class EpicsMixin(
                         f"Couldn't link using discovered epic_link field: {str(e)}. Trying fallback methods..."
                     )
 
+            # Try the parent field next (if discovered or natively supported)
+            if "parent" in field_ids or "parent" not in field_ids:
+                try:
+                    fields = {"parent": {"key": epic_key}}
+                    self.jira.update_issue(
+                        issue_key=issue_key, update={"fields": fields}
+                    )
+                    logger.info(
+                        f"Successfully linked {issue_key} to {epic_key} using parent field"
+                    )
+                    return self.get_issue(issue_key)
+                except Exception as e:
+                    logger.info(
+                        f"Couldn't link using parent field: {str(e)}. Trying discovered fields..."
+                    )
+
             # Fallback to common custom fields if dynamic discovery didn't work
             custom_field_attempts: list[dict[str, str]] = [
                 {"customfield_10014": epic_key},  # Common in Jira Cloud
                 {"customfield_10008": epic_key},  # Common in Jira Server
+                {"customfield_10201": epic_key},  # Added for DS JIRA
                 {"customfield_10000": epic_key},  # Also common
                 {"customfield_11703": epic_key},  # Known from previous error
                 {"epic_link": epic_key},  # Sometimes used
