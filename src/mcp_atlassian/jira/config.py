@@ -15,78 +15,6 @@ from ..utils.urls import is_atlassian_cloud_url
 
 
 @dataclass
-class SLAConfig:
-    """SLA calculation configuration.
-
-    Configures how SLA metrics are calculated, including working hours settings.
-    """
-
-    default_metrics: list[str]  # Default metrics to calculate
-    working_hours_only: bool = False  # Exclude non-working hours
-    working_hours_start: str = "09:00"  # Start of working day (24h format)
-    working_hours_end: str = "17:00"  # End of working day (24h format)
-    working_days: list[int] | None = None  # Working days (1=Mon, 7=Sun)
-    timezone: str = "UTC"  # IANA timezone for calculations
-
-    def __post_init__(self) -> None:
-        """Set defaults and validate after initialization."""
-        if self.working_days is None:
-            self.working_days = [1, 2, 3, 4, 5]  # Monday-Friday
-        else:
-            # Validate working_days values are in range 1-7
-            invalid_days = [d for d in self.working_days if d < 1 or d > 7]
-            if invalid_days:
-                raise ValueError(
-                    f"Invalid working days: {invalid_days}. Must be 1-7 (Mon-Sun)"
-                )
-
-    @classmethod
-    def from_env(cls) -> "SLAConfig":
-        """Create SLA configuration from environment variables.
-
-        Returns:
-            SLAConfig with values from environment variables
-
-        Raises:
-            ValueError: If working_days contains invalid values
-        """
-        # Default metrics
-        metrics_str = os.getenv("JIRA_SLA_METRICS", "cycle_time,time_in_status")
-        default_metrics = [m.strip() for m in metrics_str.split(",")]
-
-        # Working hours settings
-        working_hours_only = os.getenv(
-            "JIRA_SLA_WORKING_HOURS_ONLY", "false"
-        ).lower() in ("true", "1", "yes")
-
-        working_hours_start = os.getenv("JIRA_SLA_WORKING_HOURS_START", "09:00")
-        working_hours_end = os.getenv("JIRA_SLA_WORKING_HOURS_END", "17:00")
-
-        # Working days (1=Monday, 7=Sunday)
-        working_days_str = os.getenv("JIRA_SLA_WORKING_DAYS", "1,2,3,4,5")
-        working_days = [int(d.strip()) for d in working_days_str.split(",")]
-
-        # Validate working_days
-        invalid_days = [d for d in working_days if d < 1 or d > 7]
-        if invalid_days:
-            raise ValueError(
-                f"Invalid JIRA_SLA_WORKING_DAYS: {invalid_days}. Must be 1-7 (Mon-Sun)"
-            )
-
-        # Timezone
-        timezone = os.getenv("JIRA_SLA_TIMEZONE", "UTC")
-
-        return cls(
-            default_metrics=default_metrics,
-            working_hours_only=working_hours_only,
-            working_hours_start=working_hours_start,
-            working_hours_end=working_hours_end,
-            working_days=working_days,
-            timezone=timezone,
-        )
-
-
-@dataclass
 class JiraConfig:
     """Jira API configuration.
 
@@ -108,13 +36,6 @@ class JiraConfig:
     no_proxy: str | None = None  # Comma-separated list of hosts to bypass proxy
     socks_proxy: str | None = None  # SOCKS proxy URL (optional)
     custom_headers: dict[str, str] | None = None  # Custom HTTP headers
-    disable_jira_markup_translation: bool = (
-        False  # Disable automatic markup translation between formats
-    )
-    client_cert: str | None = None  # Client certificate file path (.pem)
-    client_key: str | None = None  # Client private key file path (.pem)
-    client_key_password: str | None = None  # Password for encrypted private key
-    sla_config: SLAConfig | None = None  # Optional SLA configuration
 
     @property
     def is_cloud(self) -> bool:
@@ -172,27 +93,20 @@ class JiraConfig:
         # Use the shared utility function directly
         is_cloud = is_atlassian_cloud_url(url)
 
-        if is_cloud:
-            # Cloud: OAuth takes priority, then basic auth
-            if oauth_config:
-                auth_type = "oauth"
-            elif username and api_token:
+        if oauth_config:
+            # OAuth is available - could be full config or minimal config for user-provided tokens
+            auth_type = "oauth"
+        elif is_cloud:
+            if username and api_token:
                 auth_type = "basic"
             else:
                 error_msg = "Cloud authentication requires JIRA_USERNAME and JIRA_API_TOKEN, or OAuth configuration (set ATLASSIAN_OAUTH_ENABLE=true for user-provided tokens)"
                 raise ValueError(error_msg)
         else:  # Server/Data Center
-            # Server/DC: PAT takes priority over OAuth (fixes #824)
             if personal_token:
-                if oauth_config:
-                    logger = logging.getLogger("mcp-atlassian.jira.config")
-                    logger.warning(
-                        "Both PAT and OAuth configured for Server/DC. Using PAT."
-                    )
                 auth_type = "pat"
-            elif oauth_config:
-                auth_type = "oauth"
             elif username and api_token:
+                # Allow basic auth for Server/DC too
                 auth_type = "basic"
             else:
                 error_msg = "Server/Data Center authentication requires JIRA_PERSONAL_TOKEN or JIRA_USERNAME and JIRA_API_TOKEN"
@@ -213,16 +127,6 @@ class JiraConfig:
         # Custom headers - service-specific only
         custom_headers = get_custom_headers("JIRA_CUSTOM_HEADERS")
 
-        # Markup translation setting
-        disable_jira_markup_translation = (
-            os.getenv("DISABLE_JIRA_MARKUP_TRANSLATION", "false").lower() == "true"
-        )
-
-        # Client certificate settings
-        client_cert = os.getenv("JIRA_CLIENT_CERT")
-        client_key = os.getenv("JIRA_CLIENT_KEY")
-        client_key_password = os.getenv("JIRA_CLIENT_KEY_PASSWORD")
-
         return cls(
             url=url,
             auth_type=auth_type,
@@ -237,10 +141,6 @@ class JiraConfig:
             no_proxy=no_proxy,
             socks_proxy=socks_proxy,
             custom_headers=custom_headers,
-            disable_jira_markup_translation=disable_jira_markup_translation,
-            client_cert=client_cert,
-            client_key=client_key,
-            client_key_password=client_key_password,
         )
 
     def is_auth_configured(self) -> bool:
