@@ -131,6 +131,24 @@ config = JiraConfig(
 | Need to edit comments? | Use Jira UI or `curl` to direct REST API |
 | Need client certificates? | Configure at proxy level (JFrog), not in app |
 
+## Implementation Notes
+
+### Epic Field Detection (Important for Troubleshooting)
+Epic fields vary significantly across Jira instances:
+- **Samsung DS Jira**: customfield_10203 (Epic Name), customfield_10201 (Epic Link)
+- **Jira Cloud**: customfield_10014, customfield_10008
+- **Jira Server**: customfield_10011, customfield_10005
+
+The client attempts multiple strategies:
+1. Dynamic discovery from existing epics (most reliable)
+2. Standard field names (epic_link, Epic Link, etc.)
+3. Common custom field IDs (by frequency)
+
+**If epic linking fails:**
+- The error message will show which fields were tried
+- Check your Jira instance's custom field configuration
+- Contact your Jira admin to map epic fields correctly
+
 ## Why These Changes?
 
 1. **Comment Visibility/Editing**: Advanced permission features, rare use case in typical workflows
