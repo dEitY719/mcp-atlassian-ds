@@ -7,6 +7,12 @@
 - `add_comment()` - no longer accepts `visibility` parameter
 - `edit_comment()` - method completely removed
 
+**Supported Operations:**
+- ✅ `get_issue_comments()` - retrieve all comments (public only)
+- ✅ `add_comment()` - add new comment (public only)
+- ❌ Restrict comment visibility (removed)
+- ❌ Edit comments (removed)
+
 **Before:**
 ```python
 # Restrict comment to specific group
@@ -26,7 +32,12 @@ confluence.add_comment(
 )
 ```
 
-**Impact:** Comments cannot be restricted by user group or role. All comments added through this client are visible to all issue watchers.
+**Note:** Comment field is automatically included in issue details. When you fetch an issue, comments are included by default (no separate call needed).
+
+**Impact:**
+- Comments cannot be restricted by user group or role
+- All comments added through this client are visible to all issue watchers
+- All comments are public/unrestricted
 
 ### 2. Comment Editing Removed ❌
 **Affected Method:**
