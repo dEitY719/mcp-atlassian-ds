@@ -16,7 +16,6 @@ from ..constants import (
     JIRA_DEFAULT_ID,
     JIRA_DEFAULT_KEY,
 )
-from .adf import adf_to_text
 from .comment import JiraComment
 from .common import (
     JiraAttachment,
@@ -268,14 +267,7 @@ class JiraIssue(ApiModel, TimestampMixin):
         issue_id = str(data.get("id", JIRA_DEFAULT_ID))
         key = str(data.get("key", JIRA_DEFAULT_KEY))
         summary = str(fields.get("summary", EMPTY_STRING))
-
-        # Handle description - can be string (legacy) or ADF dict (Jira Cloud new editor)
-        raw_description = fields.get("description")
-        if isinstance(raw_description, dict):
-            # Convert ADF to plain text
-            description = adf_to_text(raw_description)
-        else:
-            description = raw_description
+        description = fields.get("description")
 
         # Timestamps
         created = str(fields.get("created", EMPTY_STRING))
@@ -366,9 +358,11 @@ class JiraIssue(ApiModel, TimestampMixin):
         if fix_versions_data := fields.get("fixVersions"):
             if isinstance(fix_versions_data, list):
                 fix_versions = [
-                    str(version.get("name", ""))
-                    if isinstance(version, dict)
-                    else str(version)
+                    (
+                        str(version.get("name", ""))
+                        if isinstance(version, dict)
+                        else str(version)
+                    )
                     for version in fix_versions_data
                     if version
                 ]
@@ -624,6 +618,9 @@ class JiraIssue(ApiModel, TimestampMixin):
                     processed_value = self._process_custom_field_value(
                         field_data_obj.get("value")
                     )
+                    # Skip if value is None
+                    if processed_value is None:
+                        continue
                     output_value_obj = {"value": processed_value}
                     if "name" in field_data_obj:
                         output_value_obj["name"] = field_data_obj["name"]
