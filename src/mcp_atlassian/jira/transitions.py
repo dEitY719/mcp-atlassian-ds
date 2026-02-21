@@ -87,20 +87,13 @@ class TransitionsMixin(JiraClient, IssueOperationsProto, UsersOperationsProto):
         """
         Get the raw transitions data for an issue.
 
-        Uses get_issue_transitions_full() to get the complete API response
-        including the full 'to' status object, not the simplified version
-        from get_issue_transitions() which only returns the status name as a string.
-
         Args:
             issue_key: The issue key (e.g. 'PROJ-123')
 
         Returns:
-            Raw transitions data from the API with full 'to' status objects
+            Raw transitions data from the API
         """
-        response = self.jira.get_issue_transitions_full(issue_key)
-        if isinstance(response, dict):
-            return response.get("transitions", [])
-        return []
+        return self.jira.get_issue_transitions(issue_key)
 
     def get_transitions_models(self, issue_key: str) -> list[JiraTransition]:
         """
@@ -155,9 +148,11 @@ class TransitionsMixin(JiraClient, IssueOperationsProto, UsersOperationsProto):
             # Convert string IDs to integers for proper comparison if normalized_transition_id is an integer
             if isinstance(normalized_transition_id, int):
                 valid_ids = [
-                    int(id_val)
-                    if isinstance(id_val, str) and id_val.isdigit()
-                    else id_val
+                    (
+                        int(id_val)
+                        if isinstance(id_val, str) and id_val.isdigit()
+                        else id_val
+                    )
                     for id_val in valid_ids
                 ]
 
@@ -213,8 +208,6 @@ class TransitionsMixin(JiraClient, IssueOperationsProto, UsersOperationsProto):
                 )
             else:
                 # If no status name is found, try direct transition ID method
-                # Note: This fallback should rarely be hit now that get_transitions()
-                # uses get_issue_transitions_full() which returns complete 'to' objects
                 logger.info(f"Using direct transition ID {normalized_transition_id}")
                 # Convert to integer if it's a string that looks like an integer
                 if (
@@ -230,7 +223,7 @@ class TransitionsMixin(JiraClient, IssueOperationsProto, UsersOperationsProto):
 
                 # Apply fields and comments separately if needed
                 if fields_for_api or update_for_api:
-                    payload: dict[str, Any] = {}
+                    payload = {}
                     if fields_for_api:
                         payload["fields"] = fields_for_api
                     if update_for_api:
@@ -385,7 +378,9 @@ class TransitionsMixin(JiraClient, IssueOperationsProto, UsersOperationsProto):
                     # Check if _get_account_id is available (from UsersMixin)
                     account_id = self._get_account_id(value)
                     sanitized_fields[key] = {"accountId": account_id}
-                except Exception as e:  # noqa: BLE001 - Intentional fallback with logging
+                except (
+                    Exception
+                ) as e:  # noqa: BLE001 - Intentional fallback with logging
                     error_msg = f"Could not resolve assignee '{value}': {str(e)}"
                     logger.warning(error_msg)
                     # Skip this field
