@@ -39,7 +39,10 @@ class EpicsMixin(
         """
         try:
             # If we already have both epic fields, no need to search
-            if all(field in field_ids for field in ["epic_name", "epic_link", "Epic Link", "Epic Name"]):
+            if all(
+                field in field_ids
+                for field in ["epic_name", "epic_link", "Epic Link", "Epic Name"]
+            ):
                 return
 
             # Find an Epic in the system
@@ -239,7 +242,12 @@ class EpicsMixin(
             return field_ids["Epic Name"]
 
         # Strategy 2: Check common field IDs used across different Jira instances
-        common_ids = ["customfield_10203", "customfield_10011", "customfield_10005", "customfield_10004"]
+        common_ids = [
+            "customfield_10203",
+            "customfield_10011",
+            "customfield_10005",
+            "customfield_10004",
+        ]
         for field_id in common_ids:
             if field_id in field_ids.values():
                 logger.debug(f"Using common Epic Name field ID: {field_id}")
