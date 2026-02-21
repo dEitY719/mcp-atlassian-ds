@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from pydantic import Field, field_serializer
+from pydantic import Field
 
 from mcp_atlassian.utils import parse_date
 
@@ -518,13 +518,6 @@ class JiraChangelog(ApiModel, TimestampMixin):
     created: datetime | None = None
     items: list[JiraChangelogItem] = Field(default_factory=list)
 
-    @field_serializer("created")
-    def serialize_created(self, value: datetime | None) -> str | None:
-        """Serialize datetime to ISO 8601 string for JSON compatibility."""
-        if value is None:
-            return None
-        return value.isoformat()
-
     @classmethod
     def from_api_response(cls, data: dict[str, Any], **kwargs: Any) -> "JiraChangelog":
         """
@@ -585,6 +578,6 @@ class JiraChangelog(ApiModel, TimestampMixin):
             result["author"] = self.author.to_simplified_dict()
 
         if self.created:
-            result["created"] = self.created.isoformat()
+            result["created"] = str(self.created)
 
         return result
