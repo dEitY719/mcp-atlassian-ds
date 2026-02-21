@@ -108,9 +108,6 @@ class JiraClient:
             url=self.config.url,
             session=self.jira._session,
             ssl_verify=self.config.ssl_verify,
-            client_cert=self.config.client_cert,
-            client_key=self.config.client_key,
-            client_key_password=self.config.client_key_password,
         )
 
         # Proxy configuration
@@ -136,10 +133,7 @@ class JiraClient:
             self._apply_custom_headers()
 
         # Initialize the text preprocessor for text processing capabilities
-        self.preprocessor = JiraPreprocessor(
-            base_url=self.config.url,
-            disable_translation=self.config.disable_jira_markup_translation,
-        )
+        self.preprocessor = JiraPreprocessor(base_url=self.config.url)
         self._field_ids_cache = None
         self._current_user_account_id = None
 
