@@ -33,6 +33,7 @@ These are "nice-to-have" features, not core operations. Removing them reduces:
 | Folder hierarchies | Namespace/organization (use spaces instead) |
 | Content properties | Advanced use case |
 | Property value setting | Edge case handling |
+| Page view analytics | Cloud-only feature, not required for core operations |
 
 ## Jira Issue Management
 

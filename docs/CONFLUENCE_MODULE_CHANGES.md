@@ -54,6 +54,25 @@ Dead code removal in `confluence/utils.py`:
 
 **Impact:** OAuth users (Cloud Confluence) no longer have emoji or analytics support.
 
+### 5. Analytics Mixin Removed ❌
+**Affected Class:** `ConfluenceFetcher`
+- `AnalyticsMixin` - no longer available in main ConfluenceFetcher
+- Page view analytics, metrics, engagement tracking removed
+
+**Before:**
+```python
+from mcp_atlassian.confluence import ConfluenceFetcher
+fetcher = ConfluenceFetcher(...)  # Had AnalyticsMixin
+```
+
+**After:**
+```python
+from mcp_atlassian.confluence import ConfluenceFetcher
+fetcher = ConfluenceFetcher(...)  # No analytics support
+```
+
+**Impact:** Cloud Confluence users cannot track page views, engagement metrics, or performance analytics through this client.
+
 ## Migration Guide
 
 | Feature | Workaround |
