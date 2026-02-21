@@ -112,16 +112,12 @@ class ResourceTracker:
 @pytest.fixture
 def jira_config() -> JiraConfig:
     """Create a JiraConfig from environment variables."""
-    if not os.getenv("JIRA_URL") and not os.getenv("ATLASSIAN_OAUTH_ENABLE"):
-        pytest.skip("JIRA_URL environment variable not set")
     return JiraConfig.from_env()
 
 
 @pytest.fixture
 def confluence_config() -> ConfluenceConfig:
     """Create a ConfluenceConfig from environment variables."""
-    if not os.getenv("CONFLUENCE_URL") and not os.getenv("ATLASSIAN_OAUTH_ENABLE"):
-        pytest.skip("CONFLUENCE_URL environment variable not set")
     return ConfluenceConfig.from_env()
 
 
@@ -218,7 +214,7 @@ def cleanup_resources(
 pytestmark = pytest.mark.anyio(backends=["asyncio"])
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 async def api_validation_client():
     """Provides a FastMCP client connected to the main server for tool calls."""
     transport = FastMCPTransport(main_mcp)
@@ -810,9 +806,9 @@ async def test_confluence_update_page(
             type="text", text="This should work with type field"
         )
         assert valid_content.type == "text", "TextContent should have type='text'"
-        assert valid_content.text == "This should work with type field", (
-            "TextContent text should match"
-        )
+        assert (
+            valid_content.text == "This should work with type field"
+        ), "TextContent text should match"
 
         print("TextContent validation succeeded - 'type' field is properly required")
 
@@ -894,9 +890,9 @@ async def test_jira_transition_issue(
         )
 
         if transition_result is not None:
-            assert transition_result, (
-                "Transition should return a truthy value if successful"
-            )
+            assert (
+                transition_result
+            ), "Transition should return a truthy value if successful"
 
         updated_issue = jira_client.get_issue(issue.key)
 
