@@ -44,6 +44,7 @@ These are "nice-to-have" features, not core operations. Removing them reduces:
 - Update issues
 - Transition issues
 - Add comments
+- Get comments
 - Get transitions
 
 ### ❌ Not Included
@@ -51,6 +52,10 @@ These are "nice-to-have" features, not core operations. Removing them reduces:
 - Metrics / Velocity tracking
 - SLA monitoring
 - Advanced Automation rules
+- Comment visibility restrictions
+- Comment editing
+- Worklog time tracking
+- Client certificate authentication (use proxy instead)
 
 ## General Philosophy
 
