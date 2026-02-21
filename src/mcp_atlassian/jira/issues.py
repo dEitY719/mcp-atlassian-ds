@@ -813,8 +813,8 @@ class IssuesMixin(
         # Process each kwarg
         # Iterate over a copy to allow modification of the original kwargs if needed elsewhere
         for key, value in kwargs.copy().items():
-            # Skip keys used internally for epic/parent handling or explicitly handled args like assignee/components
-            if key.startswith("__epic_") or key in ("parent", "assignee", "components"):
+            # Skip keys used internally for epic/parent handling or explicitly handled args like assignee
+            if key.startswith("__epic_") or key in ("parent", "assignee"):
                 continue
 
             normalized_key = key.lower()
@@ -1008,7 +1008,6 @@ class IssuesMixin(
             # Validate required fields
             if not issue_key:
                 raise ValueError("Issue key is required")
-
             update_fields = fields or {}
             attachments_result = None
 
@@ -1052,7 +1051,7 @@ class IssuesMixin(
                     # Create a temporary dict with just this field
                     field_kwargs = {key: value}
                     self._process_additional_fields(update_fields, field_kwargs)
-
+            logger.warning(f"update fields : {update_fields}")
             # Update the issue fields
             if update_fields:
                 self.jira.update_issue(
@@ -1463,9 +1462,9 @@ class IssuesMixin(
                         created_issues.append(
                             JiraIssue.from_api_response(
                                 issue_data,
-                                base_url=self.config.url
-                                if hasattr(self, "config")
-                                else None,
+                                base_url=(
+                                    self.config.url if hasattr(self, "config") else None
+                                ),
                             )
                         )
                     except Exception as e:
