@@ -50,12 +50,13 @@ These are "nice-to-have" features, not core operations. Removing them reduces:
 ### ❌ Not Included
 - Sprints / Agile boards
 - Metrics / Velocity tracking
-- SLA monitoring
+- SLA monitoring & working hours configuration
 - Advanced Automation rules
 - Comment visibility restrictions
 - Comment editing
 - Worklog time tracking
 - Client certificate authentication (use proxy instead)
+- Text markup translation toggling
 
 ## General Philosophy
 
