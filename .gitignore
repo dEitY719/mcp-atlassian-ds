@@ -74,3 +74,8 @@ playground/
 
 # Claude
 .claude/
+
+# SSL/TLS certificates (development environment)
+ca-certificates.crt
+*.pem
+*.crt
