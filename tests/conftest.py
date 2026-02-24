@@ -25,6 +25,42 @@ def pytest_addoption(parser):
         default=False,
         help="Run tests that use real API data (requires env vars)",
     )
+    parser.addoption(
+        "--skip-confluence",
+        action="store_true",
+        default=False,
+        help="Skip all Confluence-related tests (use during Jira development)",
+    )
+
+
+def pytest_configure(config):
+    """Configure pytest with custom markers and behaviors."""
+    if config.getoption("--skip-confluence"):
+        # Add marker to skip Confluence tests
+        skip_confluence = pytest.mark.skip(
+            reason="Skipped with --skip-confluence flag (deferred for later development)"
+        )
+        config.addinivalue_line(
+            "markers", "confluence: mark test as Confluence-related"
+        )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Modify test collection based on command-line options."""
+    if config.getoption("--skip-confluence"):
+        skip_confluence = pytest.mark.skip(
+            reason="Skipped with --skip-confluence flag (deferred for later development)"
+        )
+        for item in items:
+            # Skip tests with @pytest.mark.confluence
+            if "confluence" in item.keywords:
+                item.add_marker(skip_confluence)
+            # Also skip tests in confluence test files by path
+            elif "confluence" in item.nodeid.lower():
+                item.add_marker(skip_confluence)
+            # Skip preprocessing tests (Confluence markdown conversion)
+            elif "test_preprocessing" in item.nodeid:
+                item.add_marker(skip_confluence)
 
 
 # ============================================================================

@@ -147,3 +147,11 @@ vcs = "git"
 style = "pep440"
 bump = true
 fallback-version = "0.0.0"
+
+[tool.pytest.ini_options]
+markers = [
+    "confluence: Confluence-related tests (skip with -m 'not confluence')",
+    "jira: Jira-related tests",
+    "integration: Integration tests requiring external services",
+]
+addopts = "-v"
