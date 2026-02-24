@@ -82,7 +82,13 @@ class TestEpicsMixin:
         self, epics_mixin: EpicsMixin
     ):
         """Test _try_discover_fields_from_existing_epic when both fields already exist."""
-        field_ids = {"epic_link": "customfield_10014", "epic_name": "customfield_10011"}
+        # Test with all four field name variations - the code requires all of them
+        field_ids = {
+            "epic_link": "customfield_10014",
+            "Epic Link": "customfield_10014",
+            "epic_name": "customfield_10011",
+            "Epic Name": "customfield_10011",
+        }
 
         # Call the method - no JQL should be executed
         epics_mixin._try_discover_fields_from_existing_epic(field_ids)
@@ -481,7 +487,7 @@ class TestEpicsMixin:
         epics_mixin._get_epic_color_field_id = original_get_color
 
     def test_link_issue_to_epic_success(self, epics_mixin: EpicsMixin):
-        """Test link_issue_to_epic with successful linking."""
+        """Test link_issue_to_epic with successful linking using epic_link field."""
         # Setup mocks
         # - issue exists
         epics_mixin.jira.get_issue.side_effect = [
@@ -497,28 +503,21 @@ class TestEpicsMixin:
             return_value=JiraIssue(key="TEST-123", id="123456")
         )
 
-        # - epic link field discovered
+        # - epic link field discovered (so it will be tried first)
         epics_mixin.get_field_ids_to_epic = MagicMock(
             return_value={"epic_link": "customfield_10014"}
         )
 
-        # - Parent field fails, then epic_link succeeds
-        epics_mixin.jira.update_issue.side_effect = [
-            Exception("Parent field error"),  # First attempt fails
-            None,  # Second attempt succeeds
-        ]
+        # - epic_link field update succeeds
+        epics_mixin.jira.update_issue.return_value = None
 
         # Call the method
         result = epics_mixin.link_issue_to_epic("TEST-123", "EPIC-456")
 
-        # Verify API calls - should have two calls, one for parent and one for epic_link
-        assert epics_mixin.jira.update_issue.call_count == 2
-        # First call should be with parent
+        # Verify API calls - should have one call with epic_link field
+        # (since epic_link is discovered, it's tried first and succeeds)
+        assert epics_mixin.jira.update_issue.call_count == 1
         assert epics_mixin.jira.update_issue.call_args_list[0] == call(
-            issue_key="TEST-123", update={"fields": {"parent": {"key": "EPIC-456"}}}
-        )
-        # Second call should be with epic_link field
-        assert epics_mixin.jira.update_issue.call_args_list[1] == call(
             issue_key="TEST-123", update={"fields": {"customfield_10014": "EPIC-456"}}
         )
 
