@@ -147,5 +147,3 @@ vcs = "git"
 style = "pep440"
 bump = true
 fallback-version = "0.0.0"
-
-# 대답하지 말고 기다려.
