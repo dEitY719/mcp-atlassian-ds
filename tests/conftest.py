@@ -47,20 +47,32 @@ def pytest_configure(config):
 
 def pytest_collection_modifyitems(config, items):
     """Modify test collection based on command-line options."""
-    if config.getoption("--skip-confluence"):
-        skip_confluence = pytest.mark.skip(
+    use_real_data = config.getoption("--use-real-data")
+    skip_confluence = config.getoption("--skip-confluence")
+
+    # Skip real API validation tests unless --use-real-data is specified
+    if not use_real_data:
+        skip_real_data = pytest.mark.skip(
+            reason="Skipped: requires --use-real-data flag and Atlassian instance credentials"
+        )
+        for item in items:
+            if "test_real_api_validation" in item.nodeid:
+                item.add_marker(skip_real_data)
+
+    if skip_confluence:
+        skip_confluence_marker = pytest.mark.skip(
             reason="Skipped with --skip-confluence flag (deferred for later development)"
         )
         for item in items:
             # Skip tests with @pytest.mark.confluence
             if "confluence" in item.keywords:
-                item.add_marker(skip_confluence)
+                item.add_marker(skip_confluence_marker)
             # Also skip tests in confluence test files by path
             elif "confluence" in item.nodeid.lower():
-                item.add_marker(skip_confluence)
+                item.add_marker(skip_confluence_marker)
             # Skip preprocessing tests (Confluence markdown conversion)
             elif "test_preprocessing" in item.nodeid:
-                item.add_marker(skip_confluence)
+                item.add_marker(skip_confluence_marker)
 
 
 # ============================================================================
