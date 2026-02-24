@@ -330,9 +330,9 @@ main_mcp.mount("jira", jira_mcp)
 main_mcp.mount("confluence", confluence_mcp)
 
 
-@main_mcp.custom_route("/metrics", methods=["GET"], include_in_schema=False)
+@main_mcp.custom_route("/healthz", methods=["GET"], include_in_schema=False)
 async def _health_check_route(request: Request) -> JSONResponse:
     return await health_check(request)
 
 
-logger.info("Added /metrics endpoint for Kubernetes probes")
+logger.info("Added /healthz endpoint for Kubernetes probes")
