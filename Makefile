@@ -9,7 +9,12 @@ sync-internal:
 
 ## sync-external: Install dependencies from public PyPI
 sync-external:
-	uv sync --project pyproject.external.toml
+	@echo "Creating external environment (.venv.external)..."
+	rm -rf .venv.external
+	python3 -m venv .venv.external
+	.venv.external/bin/pip install --upgrade pip setuptools wheel
+	.venv.external/bin/pip install -e .
+	.venv.external/bin/pip install pytest pytest-cov pytest-asyncio
 
 ## Testing
 ## test-internal: Run tests with internal environment
@@ -18,7 +23,7 @@ test-internal:
 
 ## test-external: Run tests with external environment
 test-external:
-	uv run --project pyproject.external.toml pytest tests/ -v
+	.venv.external/bin/pytest tests/ -v
 
 ## Docker Container Management
 ## run: run container
