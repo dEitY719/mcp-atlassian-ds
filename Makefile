@@ -1,6 +1,7 @@
 RUNNAME := mcp-atlassian-jira
+SKIP_CONFLUENCE ?= 0
 
-.PHONY: sync-internal sync-external test-internal test-external sync test run stop build push help
+.PHONY: sync-internal sync-external test-internal test-internal-jira test-external test-external-jira sync test run stop build push help
 
 ## Dependency Management
 ## sync-internal: Install dependencies from Artifactory
@@ -19,11 +20,19 @@ sync-external:
 ## Testing
 ## test-internal: Run tests with internal environment
 test-internal:
-	uv run pytest tests/ -v
+	uv run pytest tests/ -v $(if $(filter 1,$(SKIP_CONFLUENCE)),--skip-confluence)
+
+## test-internal-jira: Run Jira tests only (skip Confluence)
+test-internal-jira:
+	uv run pytest tests/ -v --skip-confluence
 
 ## test-external: Run tests with external environment
 test-external:
-	.venv.external/bin/pytest tests/ -v
+	.venv.external/bin/pytest tests/ -v $(if $(filter 1,$(SKIP_CONFLUENCE)),--skip-confluence)
+
+## test-external-jira: Run Jira tests only (skip Confluence)
+test-external-jira:
+	.venv.external/bin/pytest tests/ -v --skip-confluence
 
 ## sync: Install dependencies (alias for sync-internal)
 sync: sync-internal
