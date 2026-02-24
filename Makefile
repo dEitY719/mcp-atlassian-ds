@@ -1,5 +1,6 @@
 RUNNAME := mcp-atlassian-jira
 SKIP_CONFLUENCE ?= 0
+USE_REAL_DATA ?= 0
 
 .PHONY: sync-internal sync-external test-internal test-internal-jira test-external test-external-jira sync test run stop build push help
 
@@ -18,26 +19,37 @@ sync-external:
 	.venv.external/bin/pip install pytest pytest-cov pytest-asyncio
 
 ## Testing
-## test-internal: Run tests with internal environment
+## test-internal: Run tests with internal environment (USE_REAL_DATA=1 for API validation)
 test-internal:
-	uv run pytest tests/ -v $(if $(filter 1,$(SKIP_CONFLUENCE)),--skip-confluence)
+	uv run pytest tests/ -v \
+		$(if $(filter 1,$(SKIP_CONFLUENCE)),--skip-confluence) \
+		$(if $(filter 1,$(USE_REAL_DATA)),--use-real-data)
 
-## test-internal-jira: Run Jira tests only (skip Confluence)
+## test-internal-jira: Run Jira tests only (skip Confluence, USE_REAL_DATA=1 for API validation)
 test-internal-jira:
-	uv run pytest tests/ -v --skip-confluence
+	uv run pytest tests/ -v --skip-confluence \
+		$(if $(filter 1,$(USE_REAL_DATA)),--use-real-data)
 
-## test-external: Run tests with external environment
+## test-external: Run tests with external environment (USE_REAL_DATA=1 for API validation)
 test-external:
-	.venv.external/bin/pytest tests/ -v $(if $(filter 1,$(SKIP_CONFLUENCE)),--skip-confluence)
+	.venv.external/bin/pytest tests/ -v \
+		$(if $(filter 1,$(SKIP_CONFLUENCE)),--skip-confluence) \
+		$(if $(filter 1,$(USE_REAL_DATA)),--use-real-data)
 
-## test-external-jira: Run Jira tests only (skip Confluence)
+## test-external-jira: Run Jira tests only (skip Confluence, USE_REAL_DATA=1 for API validation)
 test-external-jira:
-	.venv.external/bin/pytest tests/ -v --skip-confluence
+	.venv.external/bin/pytest tests/ -v --skip-confluence \
+		$(if $(filter 1,$(USE_REAL_DATA)),--use-real-data)
 
 ## sync: Install dependencies (alias for sync-internal)
 sync: sync-internal
 
-## test: Run tests (alias for test-internal)
+## test: Run tests (alias for test-internal). Options: SKIP_CONFLUENCE=1, USE_REAL_DATA=1
+## Examples:
+##   make test                                 # Run all tests (skip real API validation)
+##   make test SKIP_CONFLUENCE=1               # Run Jira tests only
+##   make test USE_REAL_DATA=1                 # Run all tests including API validation (requires credentials)
+##   make test SKIP_CONFLUENCE=1 USE_REAL_DATA=1  # Run Jira + API validation
 test: test-internal
 
 ## Docker Container Management
