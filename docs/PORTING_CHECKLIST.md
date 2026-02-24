@@ -36,18 +36,22 @@
 ## Phase 3: 테스트 및 검증
 
 ### 외부 환경 테스트
+
 ```bash
 make sync-external
 make test-external
 ```
+
 - [ ] 의존성 설치 성공
 - [ ] 테스트 실행 (실패 예상)
 
 ### 회사 내부 환경 테스트
+
 ```bash
 make sync
 make test
 ```
+
 - [ ] 의존성 설치 성공
 - [ ] API KEY 설정 (필수!)
 - [ ] 테스트 통과 확인
