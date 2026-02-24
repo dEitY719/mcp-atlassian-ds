@@ -35,11 +35,11 @@ make test
 
 ## 🚨 흔한 실패 원인
 
-| 증상               | 원인                 | 해결책                          |
-| -------------------- | -------------------- | -------------------------------- |
-| 15개 테스트 실패   | API KEY 미설정       | `.env` 파일에 `JIRA_API_KEY` 설정 |
-| Connection 오류    | JIRA URL 오류        | `.env`에서 JIRA_URL 확인      |
-| 401 Unauthorized   | 토큰 만료/유효하지 않음 | 새로운 PAT 토큰 발급           |
+| 증상 | 원인 | 해결책 |
+| ----- | ----- | ----- |
+| 15개 테스트 실패 | API KEY 미설정 | `.env` 파일에 `JIRA_API_KEY` 설정 |
+| Connection 오류 | JIRA URL 오류 | `.env`에서 JIRA_URL 확인 |
+| 401 Unauthorized | 토큰 만료/유효하지 않음 | 새로운 PAT 토큰 발급 |
 
 ---
 
