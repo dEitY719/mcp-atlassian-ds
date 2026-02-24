@@ -1,6 +1,6 @@
 RUNNAME := mcp-atlassian-jira
 
-.PHONY: sync-internal sync-external test-internal test-external run stop build push help
+.PHONY: sync-internal sync-external test-internal test-external sync test run stop build push help
 
 ## Dependency Management
 ## sync-internal: Install dependencies from Artifactory
@@ -24,6 +24,12 @@ test-internal:
 ## test-external: Run tests with external environment
 test-external:
 	.venv.external/bin/pytest tests/ -v
+
+## sync: Install dependencies (alias for sync-internal)
+sync: sync-internal
+
+## test: Run tests (alias for test-internal)
+test: test-internal
 
 ## Docker Container Management
 ## run: run container
