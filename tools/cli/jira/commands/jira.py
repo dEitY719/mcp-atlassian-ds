@@ -10,7 +10,7 @@ from ..utils import JiraConfig, OutputFormatter
 logger = logging.getLogger("jira-cli")
 
 
-@click.group(name="jira")
+@click.group()
 @click.pass_context
 def jira_group(ctx: click.Context) -> None:
     """🎯 JIRA operations - create, read, update issues and manage fields.
