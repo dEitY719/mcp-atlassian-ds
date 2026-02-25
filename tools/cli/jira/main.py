@@ -6,7 +6,7 @@ from typing import Any
 
 import click
 
-from .commands import cli
+from .commands import jira_group
 
 # Setup logging
 logging.basicConfig(
@@ -34,22 +34,22 @@ def main(ctx: click.Context) -> None:
             export JIRA_PASSWORD="your_password"
 
     Quick Start:
-        jira create --project PROJ --type Task --summary "Your task"
-        jira read PROJ-123
-        jira custom_field get customfield_10201
-        jira custom_field list
+        jira-cli jira create --project PROJ --type Task --summary "Your task"
+        jira-cli jira read PROJ-123
+        jira-cli jira custom_field get customfield_10201
+        jira-cli jira custom_field list
 
     Learn more:
-        jira --help
-        jira jira --help
-        jira jira create --help
+        jira-cli --help
+        jira-cli jira --help
+        jira-cli jira create --help
     """
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
 
 
 # Add the jira command group
-main.add_command(cli)
+main.add_command(jira_group, name="jira")
 
 
 if __name__ == "__main__":
