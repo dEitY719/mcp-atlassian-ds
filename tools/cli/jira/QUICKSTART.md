@@ -163,7 +163,8 @@ jira-cli read --help
 cd /home/bwyoon/para/project/jira-mcp/mcp-atlassian-ds
 uv run python -m tools.cli.jira --help
 
-# If SSL certificate error: "invalid peer certificate: UnknownIssuer"
+# ONLY if SSL certificate error occurs: "invalid peer certificate: UnknownIssuer"
+# (Most external networks work without this flag)
 uv run --native-tls python -m tools.cli.jira --help
 ```
 
