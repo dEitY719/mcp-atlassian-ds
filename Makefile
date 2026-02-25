@@ -7,7 +7,7 @@ USE_REAL_DATA ?= 0
 ## Dependency Management
 ## sync-internal: Install dependencies from Artifactory (사내)
 sync-internal:
-	UV_EXTRA_INDEX_URL="http://repo.samsungds.net/artifactory/api/pypi/pypi-remote/simple" uv sync --native-tls
+	UV_EXTRA_INDEX_URL="http://repo.samsungds.net/artifactory/api/pypi/pypi-remote/simple" uv sync
 
 ## sync-external: Install dependencies from public PyPI
 sync-external:
