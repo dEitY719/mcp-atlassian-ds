@@ -10,7 +10,35 @@ from ..utils import JiraConfig, OutputFormatter
 logger = logging.getLogger("jira-cli")
 
 
+def print_config_if_help(ctx: click.Context, param: click.Parameter, value: bool) -> None:
+    """Print loaded configuration and help when --help is requested."""
+    if not value:
+        return
+
+    config = JiraConfig()
+    click.echo("\n📋 Configuration loaded from .env:", err=True)
+    click.echo(f"   JIRA_URL: {config.url if config.url else '❌ NOT SET'}", err=True)
+    click.echo(
+        f"   JIRA_PERSONAL_TOKEN: {'✅ SET' if config.pat_token else '❌ NOT SET'}",
+        err=True,
+    )
+    click.echo("", err=True)
+
+    # Now show the help text
+    click.echo(ctx.get_help())
+    ctx.exit()
+
+
 @click.group(invoke_without_command=True)
+@click.option(
+    "--help",
+    "-h",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=print_config_if_help,
+    help="Show this message and exit.",
+)
 @click.pass_context
 def jira_group(ctx: click.Context) -> None:
     """🎯 JIRA operations - create, read, update issues and manage fields.
@@ -21,13 +49,16 @@ def jira_group(ctx: click.Context) -> None:
     """
     import sys
 
-    # Skip validation for --help, --version requests
-    if any(flag in sys.argv for flag in ['--help', '-h', '--version']):
+    # Always load config to check environment variables
+    config = JiraConfig()
+
+    # Skip validation for --version requests
+    if "--version" in sys.argv:
         return
 
     # Initialize config in context for subcommands
     ctx.ensure_object(dict)
-    ctx.obj["config"] = JiraConfig()
+    ctx.obj["config"] = config
 
     # Validate config
     if not ctx.obj["config"].validate():
