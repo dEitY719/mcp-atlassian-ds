@@ -34,22 +34,21 @@ def main(ctx: click.Context) -> None:
             export JIRA_PASSWORD="your_password"
 
     Quick Start:
-        jira-cli jira create --project PROJ --type Task --summary "Your task"
-        jira-cli jira read PROJ-123
-        jira-cli jira custom_field get customfield_10201
-        jira-cli jira custom_field list
+        jira-cli create --project PROJ --type Task --summary "Your task"
+        jira-cli read PROJ-123
+        jira-cli custom_field get customfield_10201
+        jira-cli custom_field list
 
     Learn more:
         jira-cli --help
-        jira-cli jira --help
-        jira-cli jira create --help
+        jira-cli create --help
     """
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
 
 
-# Add the jira command group
-main.add_command(jira_group, name="jira")
+# Add the jira command group (no name wrapper - already in jira module)
+main.add_command(jira_group)
 
 
 if __name__ == "__main__":

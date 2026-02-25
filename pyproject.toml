@@ -1,6 +1,6 @@
 [project]
 name = "mcp-atlassian"
-dynamic = ["version"]
+version = "0.1.0"
 description = "The Model Context Protocol (MCP) Atlassian integration is an open-source implementation that bridges Atlassian products (Jira and Confluence) with AI language models following Anthropic's MCP specification. This project enables secure, contextual AI interactions with Atlassian tools while maintaining data privacy and security. Key features include:"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,7 +37,7 @@ url = "http://repo.samsungds.net/artifactory/api/pypi/pypi-remote/simple"
 default = true
 
 [build-system]
-requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
@@ -139,15 +139,6 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "src.mcp_atlassian.*"
 disallow_untyped_defs = false
-
-[tool.hatch.version]
-source = "uv-dynamic-versioning"
-
-[tool.uv-dynamic-versioning]
-vcs = "git"
-style = "pep440"
-bump = true
-fallback-version = "0.0.0"
 
 [tool.pytest.ini_options]
 markers = [
