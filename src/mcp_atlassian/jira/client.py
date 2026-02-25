@@ -83,6 +83,11 @@ class JiraClient:
                 cloud=self.config.is_cloud,
                 verify_ssl=self.config.ssl_verify,
             )
+            # Ensure Bearer token format in Authorization header for PAT
+            self.jira._session.headers.update({
+                "Authorization": f"Bearer {self.config.personal_token}",
+                "Content-Type": "application/json",
+            })
         else:  # basic auth
             logger.debug(
                 f"Initializing Jira client with Basic auth. "
