@@ -31,9 +31,11 @@ dependencies = [
 name = "sooperset"
 email = "soomiles.dev@gmail.com"
 
-# 외부 환경용 - 공개 PyPI 사용
-[tool.uv]
-index-url = "https://pypi.org/simple"
+# 외부 환경용 - 공개 PyPI 사용 (기본값)
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+default = true
 
 [build-system]
 requires = ["hatchling"]

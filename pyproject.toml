@@ -31,10 +31,8 @@ dependencies = [
 name = "sooperset"
 email = "soomiles.dev@gmail.com"
 
-[[tool.uv.index]]
-name = "jfrog"
-url = "http://repo.samsungds.net/artifactory/api/pypi/pypi-remote/simple"
-default = true
+# 사내 저장소는 환경변수로 관리 (UV_EXTRA_INDEX_URL 사용)
+# export UV_EXTRA_INDEX_URL="http://repo.samsungds.net/artifactory/api/pypi/pypi-remote/simple"
 
 [build-system]
 requires = ["hatchling"]
