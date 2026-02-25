@@ -139,24 +139,32 @@ export JIRA_PERSONAL_TOKEN="your_personal_access_token"
 
 ### 2. Run CLI
 
-#### 🏢 **Internal (사내):**
+#### 🏢 **Internal (사내) - With Company Repository:**
 ```bash
+# CRITICAL: Set internal PyPI repository first
+export UV_EXTRA_INDEX_URL="http://repo.samsungds.net/artifactory/api/pypi/pypi-remote/simple"
+
 # Via uv (from project root)
 cd /home/bwyoon/para/project/jira-mcp/mcp-atlassian-ds
 uv run python -m tools.cli.jira --help
 
 # After installation
+uv sync
 jira-cli --help
 jira-cli create --help
 jira-cli read --help
 ```
 
-#### 🌍 **External (외부) - WITH SSL FIX:**
+#### 🌍 **External (외부) - Public PyPI (Default):**
 ```bash
-# Use --native-tls flag to bypass SSL certificate issues
-uv run --native-tls --project pyproject.external.toml python -m tools.cli.jira --help
+# No setup needed - uses public PyPI by default
+# DO NOT set UV_EXTRA_INDEX_URL
 
-# This solves: "invalid peer certificate: UnknownIssuer"
+cd /home/bwyoon/para/project/jira-mcp/mcp-atlassian-ds
+uv run python -m tools.cli.jira --help
+
+# If SSL certificate error: "invalid peer certificate: UnknownIssuer"
+uv run --native-tls python -m tools.cli.jira --help
 ```
 
 ---
