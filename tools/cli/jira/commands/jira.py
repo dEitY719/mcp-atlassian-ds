@@ -289,8 +289,9 @@ def get_custom_field(
         # JiraClient will use JiraConfig.from_env() to read environment variables
         client = JiraClient()
 
-        # Get field information using client method
-        field_info = client.get_field_by_id(field_id)
+        # Get field information from Jira API
+        all_fields = client.jira.get_all_fields()
+        field_info = next((f for f in all_fields if f.get("id") == field_id), None)
 
         if field_info:
             click.echo(
@@ -364,8 +365,8 @@ def list_custom_fields(
         # JiraClient will use JiraConfig.from_env() to read environment variables
         client = JiraClient()
 
-        # Get custom fields
-        fields = client.get_custom_fields()
+        # Get custom fields from Jira API
+        fields = client.jira.get_all_custom_fields()
 
         # Filter by search keyword if provided
         if search:
