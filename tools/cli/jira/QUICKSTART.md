@@ -27,16 +27,16 @@ tools/cli/
 
 ## 🎯 3 Main CLI Commands
 
-### 1️⃣ `jira create` - Create a New Issue
+### 1️⃣ `create` - Create a New Issue
 
 ```bash
 # Syntax
-jira create --project KEY --type TYPE --summary "Summary text"
+jira-cli create --project KEY --type TYPE --summary "Summary text"
 
 # Examples
-jira create --project PROJ --type Task --summary "Fix API endpoint"
-jira create --project ABC --type Bug --summary "Login fails" --format table
-jira create --project PROJ --type Story --summary "New feature" \
+jira-cli create --project PROJ --type Task --summary "Fix API endpoint"
+jira-cli create --project ABC --type Bug --summary "Login fails" --format table
+jira-cli create --project PROJ --type Story --summary "New feature" \
   --description "Add this feature" --assignee john.doe
 ```
 
@@ -50,17 +50,17 @@ jira create --project PROJ --type Story --summary "New feature" \
 
 ---
 
-### 2️⃣ `jira read` - Read Issue Details
+### 2️⃣ `read` - Read Issue Details
 
 ```bash
 # Syntax
-jira read ISSUE_KEY
+jira-cli read ISSUE_KEY
 
 # Examples
-jira read PROJ-123
-jira read PROJ-123 --format table
-jira read PROJ-123 --fields summary,status,assignee
-jira read ABC-456 --format yaml
+jira-cli read PROJ-123
+jira-cli read PROJ-123 --format table
+jira-cli read PROJ-123 --fields summary,status,assignee
+jira-cli read ABC-456 --format yaml
 ```
 
 **Options:**
@@ -71,18 +71,18 @@ jira read ABC-456 --format yaml
 
 ---
 
-### 3️⃣ `jira custom_field get` - Get Custom Field Info
+### 3️⃣ `custom_field get` - Get Custom Field Info
 
 Query JIRA API (`GET /rest/api/2/field`) to get field details:
 
 ```bash
 # Syntax
-jira custom_field get FIELD_ID
+jira-cli custom_field get FIELD_ID
 
 # Examples
-jira custom_field get customfield_10201
-jira custom_field get customfield_10201 --format table
-jira custom_field get customfield_10203 --verbose
+jira-cli custom_field get customfield_10201
+jira-cli custom_field get customfield_10201 --format table
+jira-cli custom_field get customfield_10203 --verbose
 ```
 
 **Options:**
@@ -108,20 +108,20 @@ jira custom_field get customfield_10203 --verbose
 
 ## 🎁 Bonus: Additional Commands (Already Included!)
 
-### `jira custom_field list` - List All Custom Fields
+### List All Custom Fields
 
 ```bash
 # List first 20 fields
-jira custom_field list
+jira-cli custom_field list
 
 # List more
-jira custom_field list --limit 50
+jira-cli custom_field list --limit 50
 
 # Search for "epic"
-jira custom_field list --search epic --format table
+jira-cli custom_field list --search epic --format table
 
 # Combine
-jira custom_field list --search epic --limit 10 --format table
+jira-cli custom_field list --search epic --limit 10 --format table
 ```
 
 ---
@@ -135,19 +135,28 @@ export JIRA_URL="https://jira.samsungds.net"
 export JIRA_PERSONAL_TOKEN="your_personal_access_token"
 ```
 
-**Important**: Variable names are synchronized with `mcp-atlassian-ds/.env.example` (SSOT)
+**Important**: Variable names are synchronized with `.env.example` (SSOT)
 
 ### 2. Run CLI
 
+#### 🏢 **Internal (사내):**
 ```bash
 # Via uv (from project root)
-cd /home/bwyoon/para/project/diff-mcp/mcp-atlassian-ds
-uv run python -m tools.cli jira --help
+cd /home/bwyoon/para/project/jira-mcp/mcp-atlassian-ds
+uv run python -m tools.cli.jira --help
 
 # After installation
-jira --help
-jira jira --help
-jira jira create --help
+jira-cli --help
+jira-cli create --help
+jira-cli read --help
+```
+
+#### 🌍 **External (외부) - WITH SSL FIX:**
+```bash
+# Use --native-tls flag to bypass SSL certificate issues
+uv run --native-tls --project pyproject.external.toml python -m tools.cli.jira --help
+
+# This solves: "invalid peer certificate: UnknownIssuer"
 ```
 
 ---
