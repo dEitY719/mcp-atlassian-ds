@@ -10,7 +10,7 @@ from ..utils import JiraConfig, OutputFormatter
 logger = logging.getLogger("jira-cli")
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.pass_context
 def jira_group(ctx: click.Context) -> None:
     """🎯 JIRA operations - create, read, update issues and manage fields.
@@ -19,6 +19,12 @@ def jira_group(ctx: click.Context) -> None:
         - JIRA_URL: JIRA instance URL
         - JIRA_PERSONAL_TOKEN: Personal Access Token
     """
+    import sys
+
+    # Skip validation for --help, --version requests
+    if any(flag in sys.argv for flag in ['--help', '-h', '--version']):
+        return
+
     # Initialize config in context for subcommands
     ctx.ensure_object(dict)
     ctx.obj["config"] = JiraConfig()
