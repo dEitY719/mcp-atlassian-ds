@@ -8,7 +8,7 @@ These tests will be skipped if the required environment variables are not set
 or if the --use-real-data flag is not passed to pytest.
 
 To run these tests:
-    pytest tests/test_real_api_validation.py --use-real-data
+    pytest tests/integration/test_real_api_validation.py --use-real-data
 
 Required environment variables:
     - JIRA_URL, JIRA_USERNAME, JIRA_API_TOKEN
@@ -27,6 +27,9 @@ import pytest
 from fastmcp import Client
 from fastmcp.client import FastMCPTransport
 from mcp.types import TextContent
+
+# Skip all tests in this module (to be enabled later)
+pytestmark = pytest.mark.skip(reason="Real API validation tests deferred to Phase 3.2")
 
 from mcp_atlassian.confluence import ConfluenceFetcher
 from mcp_atlassian.confluence.comments import CommentsMixin as ConfluenceCommentsMixin

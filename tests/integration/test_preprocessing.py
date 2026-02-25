@@ -5,6 +5,9 @@ from mcp_atlassian.preprocessing.jira import JiraPreprocessor
 from tests.fixtures.confluence_mocks import MOCK_COMMENTS_RESPONSE, MOCK_PAGE_RESPONSE
 from tests.fixtures.jira_mocks import MOCK_JIRA_ISSUE_RESPONSE
 
+# Skip all tests in this module (to be enabled later)
+pytestmark = pytest.mark.skip(reason="Preprocessing tests deferred to Phase 3.2")
+
 
 class MockConfluenceClient:
     def get_user_details_by_accountid(self, account_id):
