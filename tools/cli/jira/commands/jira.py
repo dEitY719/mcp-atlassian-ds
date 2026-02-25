@@ -103,12 +103,9 @@ def create_issue(
         # Import JiraClient here to avoid circular imports
         from src.mcp_atlassian.jira.client import JiraClient
 
-        client = JiraClient(
-            url=config.url,
-            username=config.username,
-            password=config.password,
-            pat=config.pat_token,
-        )
+        # JiraClient will use JiraConfig.from_env() to read environment variables
+        # which were loaded from .env file by JiraConfig.__init__
+        client = JiraClient()
 
         # Create issue
         issue_data = {
@@ -187,12 +184,8 @@ def read_issue(
     try:
         from src.mcp_atlassian.jira.client import JiraClient
 
-        client = JiraClient(
-            url=config.url,
-            username=config.username,
-            password=config.password,
-            pat=config.pat_token,
-        )
+        # JiraClient will use JiraConfig.from_env() to read environment variables
+        client = JiraClient()
 
         # Parse fields
         field_list = [f.strip() for f in fields.split(",") if f.strip()]
@@ -261,17 +254,11 @@ def get_custom_field(
 
     try:
         from src.mcp_atlassian.jira.client import JiraClient
-        from src.mcp_atlassian.jira.fields import FieldsMixin
 
-        client = JiraClient(
-            url=config.url,
-            username=config.username,
-            password=config.password,
-            pat=config.pat_token,
-        )
+        # JiraClient will use JiraConfig.from_env() to read environment variables
+        client = JiraClient()
 
-        # Mix in FieldsMixin to get field operations
-        # This is a temporary workaround - ideally JiraClient would inherit FieldsMixin
+        # Get field information using client method
         field_info = client.get_field_by_id(field_id)
 
         if field_info:
@@ -343,12 +330,8 @@ def list_custom_fields(
     try:
         from src.mcp_atlassian.jira.client import JiraClient
 
-        client = JiraClient(
-            url=config.url,
-            username=config.username,
-            password=config.password,
-            pat=config.pat_token,
-        )
+        # JiraClient will use JiraConfig.from_env() to read environment variables
+        client = JiraClient()
 
         # Get custom fields
         fields = client.get_custom_fields()

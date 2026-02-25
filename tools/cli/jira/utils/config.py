@@ -3,7 +3,10 @@
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any
+
+from dotenv import load_dotenv
 
 logger = logging.getLogger("jira-cli")
 
@@ -14,8 +17,15 @@ class JiraConfig:
     def __init__(self) -> None:
         """Initialize JIRA configuration from environment variables.
 
+        Loads .env file from project root first, then reads environment variables.
         Authentication: Personal Access Token (JIRA_PERSONAL_TOKEN)
         """
+        # Load .env file from project root
+        env_file = Path.cwd() / ".env"
+        if env_file.exists():
+            load_dotenv(env_file)
+            logger.debug(f"Loaded .env file from {env_file}")
+
         self.url = os.getenv("JIRA_URL", "")
         self.pat_token = os.getenv("JIRA_PERSONAL_TOKEN", "")
         self.api_version = os.getenv("JIRA_API_VERSION", "2")
@@ -36,8 +46,6 @@ class JiraConfig:
         """Convert config to dictionary."""
         return {
             "url": self.url,
-            "username": self.username,
-            "password": "***" if self.password else "",
             "pat_token": "***" if self.pat_token else "",
             "api_version": self.api_version,
         }
