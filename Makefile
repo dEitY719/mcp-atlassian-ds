@@ -5,9 +5,9 @@ USE_REAL_DATA ?= 0
 .PHONY: sync-internal sync-external test-internal test-internal-jira test-external test-external-jira sync test run stop build push help
 
 ## Dependency Management
-## sync-internal: Install dependencies from Artifactory
+## sync-internal: Install dependencies from Artifactory (사내)
 sync-internal:
-	uv sync
+	UV_EXTRA_INDEX_URL="http://repo.samsungds.net/artifactory/api/pypi/pypi-remote/simple" uv sync --native-tls
 
 ## sync-external: Install dependencies from public PyPI
 sync-external:
