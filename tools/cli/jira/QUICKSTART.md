@@ -146,11 +146,13 @@ export UV_EXTRA_INDEX_URL="http://repo.samsungds.net/artifactory/api/pypi/pypi-r
 
 # Via uv (from project root)
 cd /home/bwyoon/para/project/jira-mcp/mcp-atlassian-ds
-uv run python -m tools.cli.jira --help
 
-# After installation
-uv sync
-jira-cli --help
+# RECOMMENDED: Use uv run (most reliable)
+make sync
+uv run python -m tools.cli.jira create --help
+uv run python -m tools.cli.jira read --help
+
+# Alternative: After full installation (may require shell restart)
 jira-cli create --help
 jira-cli read --help
 ```
@@ -161,11 +163,18 @@ jira-cli read --help
 # DO NOT set UV_EXTRA_INDEX_URL
 
 cd /home/bwyoon/para/project/jira-mcp/mcp-atlassian-ds
-uv run python -m tools.cli.jira --help
 
-# ONLY if SSL certificate error occurs: "invalid peer certificate: UnknownIssuer"
-# (Most external networks work without this flag)
+# RECOMMENDED: Use uv run (most reliable)
+uv sync
+uv run python -m tools.cli.jira create --help
+uv run python -m tools.cli.jira read --help
+
+# If SSL certificate error: "invalid peer certificate: UnknownIssuer"
 uv run --native-tls python -m tools.cli.jira --help
+
+# Alternative: After full installation (may require shell restart)
+jira-cli create --help
+jira-cli read --help
 ```
 
 ---
