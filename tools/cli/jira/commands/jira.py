@@ -4,6 +4,7 @@ import logging
 from typing import Any, Optional
 
 import click
+import requests
 
 from ..utils import JiraConfig, OutputFormatter
 
@@ -284,13 +285,28 @@ def get_custom_field(
     config = ctx.obj["config"]
 
     try:
-        from src.mcp_atlassian.jira.client import JiraClient
+        # Get JIRA config from environment variables
+        config = JiraConfig()
 
-        # JiraClient will use JiraConfig.from_env() to read environment variables
-        client = JiraClient()
+        # Build API URL
+        api_url = f"{config.url}/rest/api/2/field"
 
-        # Get field information from Jira API
-        all_fields = client.jira.get_all_fields()
+        # Create headers with Bearer token
+        headers = {
+            "Authorization": f"Bearer {config.pat_token}",
+            "Content-Type": "application/json",
+        }
+
+        # Make direct HTTP request to JIRA API
+        response = requests.get(
+            api_url,
+            headers=headers,
+            verify=False,  # Match JIRA SSL verification disabled setting
+        )
+        response.raise_for_status()
+
+        # Find field by ID
+        all_fields = response.json()
         field_info = next((f for f in all_fields if f.get("id") == field_id), None)
 
         if field_info:
@@ -360,13 +376,29 @@ def list_custom_fields(
     config = ctx.obj["config"]
 
     try:
-        from src.mcp_atlassian.jira.client import JiraClient
+        # Get JIRA config from environment variables
+        config = JiraConfig()
 
-        # JiraClient will use JiraConfig.from_env() to read environment variables
-        client = JiraClient()
+        # Build API URL
+        api_url = f"{config.url}/rest/api/2/field"
 
-        # Get custom fields from Jira API
-        fields = client.jira.get_all_custom_fields()
+        # Create headers with Bearer token
+        headers = {
+            "Authorization": f"Bearer {config.pat_token}",
+            "Content-Type": "application/json",
+        }
+
+        # Make direct HTTP request to JIRA API
+        response = requests.get(
+            api_url,
+            headers=headers,
+            verify=False,  # Match JIRA SSL verification disabled setting
+        )
+        response.raise_for_status()
+
+        # Parse response and filter custom fields
+        all_fields = response.json()
+        fields = [f for f in all_fields if f.get("id", "").startswith("customfield_")]
 
         # Filter by search keyword if provided
         if search:
