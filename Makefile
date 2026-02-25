@@ -6,8 +6,10 @@ USE_REAL_DATA ?= 0
 
 ## Dependency Management
 ## sync-internal: Install dependencies from Artifactory (사내)
+## Note: --native-tls is required for internal SSL certificate verification
+## Uses system's native TLS instead of Python's bundled CA certificates
 sync-internal:
-	UV_EXTRA_INDEX_URL="http://repo.samsungds.net/artifactory/api/pypi/pypi-remote/simple" uv sync
+	UV_EXTRA_INDEX_URL="https://repo.samsungds.net/artifactory/api/pypi/pypi-remote/simple" uv sync --native-tls
 
 ## sync-external: Install dependencies from public PyPI
 sync-external:
