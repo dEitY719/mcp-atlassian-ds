@@ -42,7 +42,7 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 mcp-atlassian = "mcp_atlassian:main"
-jira = "tools.cli.main:main"
+jira-cli = "tools.cli.jira.main:main"
 
 [dependency-groups]
 dev = [

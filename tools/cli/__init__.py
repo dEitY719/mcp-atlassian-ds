@@ -1,3 +1,7 @@
-"""DS JIRA CLI - Developer-friendly command-line interface for JIRA operations."""
+"""CLI module for multiple Atlassian products.
 
-__version__ = "0.1.0"
+Includes:
+- jira: DS JIRA CLI
+- confluence: DS Confluence CLI (coming soon)
+- agent: DS Agent CLI (coming soon)
+"""
