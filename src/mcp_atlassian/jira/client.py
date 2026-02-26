@@ -22,6 +22,12 @@ from .config import JiraConfig
 # Configure logging
 logger = logging.getLogger("mcp-jira")
 
+# Enable HTTP debugging for requests library
+if logger.isEnabledFor(logging.DEBUG):
+    import http.client as http_client
+    http_client.HTTPConnection.debuglevel = 1
+    logging.getLogger("urllib3").setLevel(logging.DEBUG)
+
 
 class JiraClient:
     """Base client for Jira API interactions."""
@@ -80,10 +86,21 @@ class JiraClient:
             # Create a custom session with Bearer token authentication
             # Don't use token parameter as it converts to Basic auth internally
             session = Session()
+            logger.debug(f"[DEBUG] Created new Session object")
+
+            bearer_token = f"Bearer {self.config.personal_token}"
             session.headers.update({
-                "Authorization": f"Bearer {self.config.personal_token}",
+                "Authorization": bearer_token,
                 "Content-Type": "application/json",
             })
+            logger.debug(
+                f"[DEBUG] Updated session headers. Authorization (masked): "
+                f"{mask_sensitive(bearer_token)}"
+            )
+            logger.debug(
+                f"[DEBUG] Session headers before Jira init: "
+                f"{get_masked_session_headers(dict(session.headers))}"
+            )
 
             self.jira = Jira(
                 url=self.config.url,
@@ -92,8 +109,11 @@ class JiraClient:
                 verify_ssl=self.config.ssl_verify,
             )
             logger.debug(
-                f"Jira client initialized with PAT. Session headers (Authorization masked): "
+                f"[DEBUG] Jira client initialized. Session headers after init: "
                 f"{get_masked_session_headers(dict(self.jira._session.headers))}"
+            )
+            logger.debug(
+                f"[DEBUG] Jira object session is same as input: {self.jira._session is session}"
             )
         else:  # basic auth
             logger.debug(
