@@ -51,8 +51,23 @@ class JiraClient:
         # Load configuration from environment variables if not provided
         self.config = config or JiraConfig.from_env()
 
+        # ===== DEBUGGING: Log configuration details =====
+        logger.debug(f"[DEBUG] JiraConfig loaded:")
+        logger.debug(f"[DEBUG]   URL: {self.config.url}")
+        logger.debug(f"[DEBUG]   auth_type: {self.config.auth_type}")
+        logger.debug(f"[DEBUG]   is_cloud: {self.config.is_cloud}")
+        logger.debug(f"[DEBUG]   personal_token present: {bool(self.config.personal_token)}")
+        logger.debug(f"[DEBUG]   username: {self.config.username}")
+        logger.debug(f"[DEBUG]   api_token present: {bool(self.config.api_token)}")
+        logger.debug(f"[DEBUG]   oauth_config: {self.config.oauth_config}")
+        # ===== END DEBUGGING ====
+
         # Initialize the Jira client based on auth type
+        logger.debug(f"[DEBUG] ===== AUTHENTICATION ROUTING =====")
+        logger.debug(f"[DEBUG] auth_type = {self.config.auth_type}")
+
         if self.config.auth_type == "oauth":
+            logger.debug(f"[DEBUG] >>> ROUTING: OAuth authentication")
             if not self.config.oauth_config or not self.config.oauth_config.cloud_id:
                 error_msg = "OAuth authentication requires a valid cloud_id"
                 raise ValueError(error_msg)
@@ -78,6 +93,7 @@ class JiraClient:
                 verify_ssl=self.config.ssl_verify,
             )
         elif self.config.auth_type == "pat":
+            logger.debug(f"[DEBUG] >>> ROUTING: PAT (Personal Access Token) authentication")
             logger.debug(
                 f"Initializing Jira client with Token (PAT) auth. "
                 f"URL: {self.config.url}, "
@@ -116,6 +132,7 @@ class JiraClient:
                 f"[DEBUG] Jira object session is same as input: {self.jira._session is session}"
             )
         else:  # basic auth
+            logger.debug(f"[DEBUG] >>> ROUTING: Basic authentication (username + API token)")
             logger.debug(
                 f"Initializing Jira client with Basic auth. "
                 f"URL: {self.config.url}, Username: {self.config.username}, "
