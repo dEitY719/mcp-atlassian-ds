@@ -77,17 +77,24 @@ class JiraClient:
                 f"URL: {self.config.url}, "
                 f"Token (masked): {mask_sensitive(str(self.config.personal_token))}"
             )
-            self.jira = Jira(
-                url=self.config.url,
-                token=self.config.personal_token,
-                cloud=self.config.is_cloud,
-                verify_ssl=self.config.ssl_verify,
-            )
-            # Ensure Bearer token format in Authorization header for PAT
-            self.jira._session.headers.update({
+            # Create a custom session with Bearer token authentication
+            # Don't use token parameter as it converts to Basic auth internally
+            session = Session()
+            session.headers.update({
                 "Authorization": f"Bearer {self.config.personal_token}",
                 "Content-Type": "application/json",
             })
+
+            self.jira = Jira(
+                url=self.config.url,
+                session=session,
+                cloud=self.config.is_cloud,
+                verify_ssl=self.config.ssl_verify,
+            )
+            logger.debug(
+                f"Jira client initialized with PAT. Session headers (Authorization masked): "
+                f"{get_masked_session_headers(dict(self.jira._session.headers))}"
+            )
         else:  # basic auth
             logger.debug(
                 f"Initializing Jira client with Basic auth. "
