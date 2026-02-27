@@ -126,6 +126,10 @@ def create_issue(
         jira create --project PROJ --type Story --summary "Feature" --assignee john.doe --format table
     """
     if verbose:
+        # Enable DEBUG logging for all relevant loggers
+        logging.basicConfig(level=logging.DEBUG, force=True)
+        logging.getLogger("mcp-jira").setLevel(logging.DEBUG)
+        logging.getLogger("mcp-atlassian").setLevel(logging.DEBUG)
         logging.getLogger("jira-cli").setLevel(logging.DEBUG)
 
     config = ctx.obj["config"]
@@ -208,6 +212,10 @@ def read_issue(
         jira read PROJ-789 --format yaml --verbose
     """
     if verbose:
+        # Enable DEBUG logging for all relevant loggers
+        logging.basicConfig(level=logging.DEBUG, force=True)
+        logging.getLogger("mcp-jira").setLevel(logging.DEBUG)
+        logging.getLogger("mcp-atlassian").setLevel(logging.DEBUG)
         logging.getLogger("jira-cli").setLevel(logging.DEBUG)
 
     config = ctx.obj["config"]
@@ -279,6 +287,10 @@ def get_custom_field(
         jira custom_field get customfield_11106 --verbose
     """
     if verbose:
+        # Enable DEBUG logging for all relevant loggers
+        logging.basicConfig(level=logging.DEBUG, force=True)
+        logging.getLogger("mcp-jira").setLevel(logging.DEBUG)
+        logging.getLogger("mcp-atlassian").setLevel(logging.DEBUG)
         logging.getLogger("jira-cli").setLevel(logging.DEBUG)
 
     config = ctx.obj["config"]
@@ -355,6 +367,10 @@ def list_custom_fields(
         jira custom_field list --format table
     """
     if verbose:
+        # Enable DEBUG logging for all relevant loggers
+        logging.basicConfig(level=logging.DEBUG, force=True)
+        logging.getLogger("mcp-jira").setLevel(logging.DEBUG)
+        logging.getLogger("mcp-atlassian").setLevel(logging.DEBUG)
         logging.getLogger("jira-cli").setLevel(logging.DEBUG)
 
     config = ctx.obj["config"]
