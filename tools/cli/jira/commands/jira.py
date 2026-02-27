@@ -397,6 +397,18 @@ def list_custom_fields(
         client.jira._session.headers['User-Agent'] = 'curl/7.85.0'
         click.echo(f"CLI DEBUG: Updated User-Agent = {client.jira._session.headers.get('User-Agent')}", err=True)
 
+        # DEBUG: Check proxy configuration
+        click.echo("\n=== CLI DEBUG: PROXY CONFIGURATION ===", err=True)
+        import os
+        click.echo(f"CLI DEBUG: HTTP_PROXY env = {os.getenv('HTTP_PROXY', 'NOT SET')}", err=True)
+        click.echo(f"CLI DEBUG: HTTPS_PROXY env = {os.getenv('HTTPS_PROXY', 'NOT SET')}", err=True)
+        click.echo(f"CLI DEBUG: http_proxy env = {os.getenv('http_proxy', 'NOT SET')}", err=True)
+        click.echo(f"CLI DEBUG: https_proxy env = {os.getenv('https_proxy', 'NOT SET')}", err=True)
+        click.echo(f"CLI DEBUG: client.config.http_proxy = {client.config.http_proxy}", err=True)
+        click.echo(f"CLI DEBUG: client.config.https_proxy = {client.config.https_proxy}", err=True)
+        click.echo(f"CLI DEBUG: Session proxies = {client.jira._session.proxies}", err=True)
+        click.echo("=== CLI DEBUG: END PROXY CHECK ===\n", err=True)
+
         # DEBUG: Check client configuration and session headers
         click.echo(f"CLI DEBUG: client.config.url = {client.config.url}", err=True)
         click.echo(f"CLI DEBUG: client.config.auth_type = {client.config.auth_type}", err=True)
