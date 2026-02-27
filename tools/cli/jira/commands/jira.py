@@ -142,41 +142,43 @@ def create_issue(
 
     try:
         # Import JiraClient here to avoid circular imports
-        from src.mcp_atlassian.jira.client import JiraClient
+        from src.mcp_atlassian.jira.issues import IssuesMixin
 
-        # JiraClient will use JiraConfig.from_env() to read environment variables
-        # which were loaded from .env file by JiraConfig.__init__
-        client = JiraClient()
+        # Create client (IssuesMixin extends JiraClient with issue operations)
+        client = IssuesMixin()
 
-        # Create issue
-        issue_data = {
-            "project": {"key": project},
-            "issuetype": {"name": type},
-            "summary": summary,
+        # Create the issue using the backend implementation
+        created_issue = client.create_issue(
+            project_key=project,
+            summary=summary,
+            issue_type=type,
+            description=description,
+            assignee=assignee if assignee else None,
+        )
+
+        # Format and display the result
+        issue_dict = {
+            "key": created_issue.key,
+            "summary": created_issue.summary,
+            "type": created_issue.issue_type,
+            "status": created_issue.status,
+            "url": created_issue.url,
         }
 
-        if description:
-            issue_data["description"] = description
-
-        if assignee:
-            issue_data["assignee"] = {"name": assignee}
-
-        # This would use the actual client method once implemented
         click.echo(
             OutputFormatter.format(
                 {
                     "status": "success",
-                    "message": f"Issue will be created in {project}",
-                    "issue_data": issue_data,
-                    "note": "Integration with JiraClient pending",
+                    "message": f"Issue created successfully",
+                    "issue": issue_dict,
                 },
                 format_type=format,
             )
         )
 
-    except ImportError:
+    except ImportError as e:
         raise click.ClickException(
-            "JiraClient import failed. Ensure mcp_atlassian is properly installed."
+            f"Import failed: {str(e)}. Ensure mcp_atlassian is properly installed."
         )
     except Exception as e:
         raise click.ClickException(f"Failed to create issue: {str(e)}")
@@ -227,30 +229,50 @@ def read_issue(
     config = ctx.obj["config"]
 
     try:
-        from src.mcp_atlassian.jira.client import JiraClient
+        from src.mcp_atlassian.jira.issues import IssuesMixin
 
-        # JiraClient will use JiraConfig.from_env() to read environment variables
-        client = JiraClient()
+        # Create client (IssuesMixin extends JiraClient with issue operations)
+        client = IssuesMixin()
 
-        # Parse fields
-        field_list = [f.strip() for f in fields.split(",") if f.strip()]
+        # Parse fields - convert comma-separated string to list
+        field_list = [f.strip() for f in fields.split(",") if f.strip()] if fields else None
+
+        # Get the issue from Jira API
+        issue = client.get_issue(
+            issue_key=issue_key,
+            fields=field_list if field_list else None,
+        )
+
+        # Format the issue data for output
+        issue_dict = {
+            "key": issue.key,
+            "summary": issue.summary,
+            "type": issue.issue_type,
+            "status": issue.status,
+            "assignee": issue.assignee,
+            "created": issue.created,
+            "updated": issue.updated,
+            "url": issue.url,
+        }
+
+        # Add additional fields if requested
+        if field_list and hasattr(issue, "fields"):
+            issue_dict["requested_fields"] = issue.fields
 
         click.echo(
             OutputFormatter.format(
                 {
                     "status": "success",
-                    "message": f"Issue {issue_key} details",
-                    "issue_key": issue_key,
-                    "requested_fields": field_list or "all",
-                    "note": "Integration with JiraClient pending",
+                    "message": f"Issue {issue_key} retrieved successfully",
+                    "issue": issue_dict,
                 },
                 format_type=format,
             )
         )
 
-    except ImportError:
+    except ImportError as e:
         raise click.ClickException(
-            "JiraClient import failed. Ensure mcp_atlassian is properly installed."
+            f"Import failed: {str(e)}. Ensure mcp_atlassian is properly installed."
         )
     except Exception as e:
         raise click.ClickException(f"Failed to read issue: {str(e)}")
@@ -382,55 +404,14 @@ def list_custom_fields(
     config = ctx.obj["config"]
 
     try:
-        # FIX: Disable proxy for internal Jira access
-        # Problem: no_proxy has .samsungds.net, but Python requests prioritizes HTTP_PROXY
-        # Solution: For Jira (internal), we need DIRECT connection like curl does
-        import os
-        os.environ['HTTP_PROXY'] = ''
-        os.environ['HTTPS_PROXY'] = ''
-        os.environ['http_proxy'] = ''
-        os.environ['https_proxy'] = ''
-        click.echo("CLI: Disabled proxy for internal Jira access (no_proxy contains .samsungds.net)", err=True)
-
-        # Enable HTTP debugging to see actual network requests
-        import http.client as http_client
-        http_client.HTTPConnection.debuglevel = 1
-
         from src.mcp_atlassian.jira.client import JiraClient
 
         # JiraClient will use JiraConfig.from_env() to read environment variables
-        click.echo("=== CLI DEBUG: Creating JiraClient ===", err=True)
+        # Proxy handling for internal services is done in JiraClient.__init__
         client = JiraClient()
 
-        # TEST: Change User-Agent to curl-like value (in case firewall blocks python-requests)
-        click.echo("CLI DEBUG: Changing User-Agent to curl...", err=True)
-        client.jira._session.headers['User-Agent'] = 'curl/7.85.0'
-        click.echo(f"CLI DEBUG: Updated User-Agent = {client.jira._session.headers.get('User-Agent')}", err=True)
-
-        # DEBUG: Check proxy configuration
-        click.echo("\n=== CLI DEBUG: PROXY CONFIGURATION ===", err=True)
-        import os
-        click.echo(f"CLI DEBUG: HTTP_PROXY env = {os.getenv('HTTP_PROXY', 'NOT SET')}", err=True)
-        click.echo(f"CLI DEBUG: HTTPS_PROXY env = {os.getenv('HTTPS_PROXY', 'NOT SET')}", err=True)
-        click.echo(f"CLI DEBUG: http_proxy env = {os.getenv('http_proxy', 'NOT SET')}", err=True)
-        click.echo(f"CLI DEBUG: https_proxy env = {os.getenv('https_proxy', 'NOT SET')}", err=True)
-        click.echo(f"CLI DEBUG: client.config.http_proxy = {client.config.http_proxy}", err=True)
-        click.echo(f"CLI DEBUG: client.config.https_proxy = {client.config.https_proxy}", err=True)
-        click.echo(f"CLI DEBUG: Session proxies = {client.jira._session.proxies}", err=True)
-        click.echo("=== CLI DEBUG: END PROXY CHECK ===\n", err=True)
-
-        # DEBUG: Check client configuration and session headers
-        click.echo(f"CLI DEBUG: client.config.url = {client.config.url}", err=True)
-        click.echo(f"CLI DEBUG: client.config.auth_type = {client.config.auth_type}", err=True)
-        click.echo(f"CLI DEBUG: Session headers = {dict(client.jira._session.headers)}", err=True)
-        click.echo(f"CLI DEBUG: Session object type = {type(client.jira._session)}", err=True)
-        click.echo("=== CLI DEBUG: END CONFIG CHECK ===\n", err=True)
-
         # Get custom fields from Jira API
-        click.echo("CLI DEBUG: Calling client.jira.get_all_custom_fields()...", err=True)
-        click.echo("CLI DEBUG: (Watch for HTTP request details below)\n", err=True)
         fields = client.jira.get_all_custom_fields()
-        click.echo(f"\nCLI DEBUG: Got {len(fields)} fields from API\n", err=True)
 
         # Filter by search keyword if provided
         if search:
