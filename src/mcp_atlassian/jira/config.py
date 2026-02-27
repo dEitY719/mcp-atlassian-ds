@@ -11,6 +11,7 @@ from ..utils.oauth import (
     OAuthConfig,
     get_oauth_config_from_env,
 )
+from ..utils.proxy import disable_proxy_for_internal_services
 from ..utils.urls import is_atlassian_cloud_url
 
 
@@ -126,6 +127,11 @@ class JiraConfig:
 
         # Custom headers - service-specific only
         custom_headers = get_custom_headers("JIRA_CUSTOM_HEADERS")
+
+        # Handle proxy for internal services BEFORE creating client
+        # Must be done here (before JiraClient init) because requests library
+        # caches proxy settings early
+        disable_proxy_for_internal_services(url, "Jira")
 
         return cls(
             url=url,

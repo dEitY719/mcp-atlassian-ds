@@ -9,7 +9,6 @@ from requests import Session
 from ..exceptions import MCPAtlassianAuthenticationError
 from ..utils.logging import get_masked_session_headers, log_config_param, mask_sensitive
 from ..utils.oauth import configure_oauth_session
-from ..utils.proxy import disable_proxy_for_internal_services
 from ..utils.ssl import configure_ssl_verification
 from .config import ConfluenceConfig
 
@@ -31,10 +30,8 @@ class ConfluenceClient:
             ValueError: If configuration is invalid or environment variables are missing
             MCPAtlassianAuthenticationError: If OAuth authentication fails
         """
+        # Note: Proxy handling for internal services is done in ConfluenceConfig.from_env()
         self.config = config or ConfluenceConfig.from_env()
-
-        # Handle proxy for internal services in corporate environments
-        disable_proxy_for_internal_services(self.config.url, "Confluence")
 
         # Initialize the Confluence client based on auth type
         if self.config.auth_type == "oauth":

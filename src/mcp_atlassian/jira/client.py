@@ -15,7 +15,6 @@ from mcp_atlassian.utils.logging import (
     mask_sensitive,
 )
 from mcp_atlassian.utils.oauth import configure_oauth_session
-from mcp_atlassian.utils.proxy import disable_proxy_for_internal_services
 from mcp_atlassian.utils.ssl import configure_ssl_verification
 
 from .config import JiraConfig
@@ -44,10 +43,8 @@ class JiraClient:
             MCPAtlassianAuthenticationError: If OAuth authentication fails
         """
         # Load configuration from environment variables if not provided
+        # Note: Proxy handling for internal services is done in JiraConfig.from_env()
         self.config = config or JiraConfig.from_env()
-
-        # Handle proxy for internal services in corporate environments
-        disable_proxy_for_internal_services(self.config.url, "Jira")
 
         # Initialize the Jira client based on auth type
         if self.config.auth_type == "oauth":
