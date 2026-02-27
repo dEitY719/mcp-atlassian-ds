@@ -382,6 +382,10 @@ def list_custom_fields(
     config = ctx.obj["config"]
 
     try:
+        # Enable HTTP debugging to see actual network requests
+        import http.client as http_client
+        http_client.HTTPConnection.debuglevel = 1
+
         from src.mcp_atlassian.jira.client import JiraClient
 
         # JiraClient will use JiraConfig.from_env() to read environment variables
@@ -392,12 +396,14 @@ def list_custom_fields(
         click.echo(f"CLI DEBUG: client.config.url = {client.config.url}", err=True)
         click.echo(f"CLI DEBUG: client.config.auth_type = {client.config.auth_type}", err=True)
         click.echo(f"CLI DEBUG: Session headers = {dict(client.jira._session.headers)}", err=True)
+        click.echo(f"CLI DEBUG: Session object type = {type(client.jira._session)}", err=True)
         click.echo("=== CLI DEBUG: END CONFIG CHECK ===\n", err=True)
 
         # Get custom fields from Jira API
         click.echo("CLI DEBUG: Calling client.jira.get_all_custom_fields()...", err=True)
+        click.echo("CLI DEBUG: (Watch for HTTP request details below)\n", err=True)
         fields = client.jira.get_all_custom_fields()
-        click.echo(f"CLI DEBUG: Got {len(fields)} fields from API\n", err=True)
+        click.echo(f"\nCLI DEBUG: Got {len(fields)} fields from API\n", err=True)
 
         # Filter by search keyword if provided
         if search:
