@@ -49,6 +49,12 @@ def jira_group(ctx: click.Context) -> None:
     """
     import sys
 
+    # Initialize basic logging configuration (needed for DEBUG messages to appear)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(levelname)s - %(name)s - %(message)s'
+    )
+
     # Always load config to check environment variables
     config = JiraConfig()
 
