@@ -22,12 +22,6 @@ from .config import JiraConfig
 # Configure logging
 logger = logging.getLogger("mcp-jira")
 
-# Enable HTTP debugging for requests library
-if logger.isEnabledFor(logging.DEBUG):
-    import http.client as http_client
-    http_client.HTTPConnection.debuglevel = 1
-    logging.getLogger("urllib3").setLevel(logging.DEBUG)
-
 
 class JiraClient:
     """Base client for Jira API interactions."""
@@ -51,23 +45,8 @@ class JiraClient:
         # Load configuration from environment variables if not provided
         self.config = config or JiraConfig.from_env()
 
-        # ===== DEBUGGING: Log configuration details =====
-        logger.debug(f"[DEBUG] JiraConfig loaded:")
-        logger.debug(f"[DEBUG]   URL: {self.config.url}")
-        logger.debug(f"[DEBUG]   auth_type: {self.config.auth_type}")
-        logger.debug(f"[DEBUG]   is_cloud: {self.config.is_cloud}")
-        logger.debug(f"[DEBUG]   personal_token present: {bool(self.config.personal_token)}")
-        logger.debug(f"[DEBUG]   username: {self.config.username}")
-        logger.debug(f"[DEBUG]   api_token present: {bool(self.config.api_token)}")
-        logger.debug(f"[DEBUG]   oauth_config: {self.config.oauth_config}")
-        # ===== END DEBUGGING ====
-
         # Initialize the Jira client based on auth type
-        logger.debug(f"[DEBUG] ===== AUTHENTICATION ROUTING =====")
-        logger.debug(f"[DEBUG] auth_type = {self.config.auth_type}")
-
         if self.config.auth_type == "oauth":
-            logger.debug(f"[DEBUG] >>> ROUTING: OAuth authentication")
             if not self.config.oauth_config or not self.config.oauth_config.cloud_id:
                 error_msg = "OAuth authentication requires a valid cloud_id"
                 raise ValueError(error_msg)
@@ -93,46 +72,18 @@ class JiraClient:
                 verify_ssl=self.config.ssl_verify,
             )
         elif self.config.auth_type == "pat":
-            logger.debug(f"[DEBUG] >>> ROUTING: PAT (Personal Access Token) authentication")
             logger.debug(
                 f"Initializing Jira client with Token (PAT) auth. "
                 f"URL: {self.config.url}, "
                 f"Token (masked): {mask_sensitive(str(self.config.personal_token))}"
             )
-            # Create a custom session with Bearer token authentication
-            # Don't use token parameter as it converts to Basic auth internally
-            session = Session()
-            logger.debug(f"[DEBUG] Created new Session object")
-
-            bearer_token = f"Bearer {self.config.personal_token}"
-            session.headers.update({
-                "Authorization": bearer_token,
-                "Content-Type": "application/json",
-            })
-            logger.debug(
-                f"[DEBUG] Updated session headers. Authorization (masked): "
-                f"{mask_sensitive(bearer_token)}"
-            )
-            logger.debug(
-                f"[DEBUG] Session headers before Jira init: "
-                f"{get_masked_session_headers(dict(session.headers))}"
-            )
-
             self.jira = Jira(
                 url=self.config.url,
-                session=session,
+                token=self.config.personal_token,
                 cloud=self.config.is_cloud,
                 verify_ssl=self.config.ssl_verify,
             )
-            logger.debug(
-                f"[DEBUG] Jira client initialized. Session headers after init: "
-                f"{get_masked_session_headers(dict(self.jira._session.headers))}"
-            )
-            logger.debug(
-                f"[DEBUG] Jira object session is same as input: {self.jira._session is session}"
-            )
         else:  # basic auth
-            logger.debug(f"[DEBUG] >>> ROUTING: Basic authentication (username + API token)")
             logger.debug(
                 f"Initializing Jira client with Basic auth. "
                 f"URL: {self.config.url}, Username: {self.config.username}, "
