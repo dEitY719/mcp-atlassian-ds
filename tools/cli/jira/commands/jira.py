@@ -394,20 +394,28 @@ def list_custom_fields(
         jira custom_field list --search epic
         jira custom_field list --format table
     """
+    # Configure logging explicitly - must be done before imports
     if verbose:
         # Enable DEBUG logging for all relevant loggers
-        logging.basicConfig(level=logging.DEBUG, force=True)
-        logging.getLogger("mcp-jira").setLevel(logging.DEBUG)
-        logging.getLogger("mcp-atlassian").setLevel(logging.DEBUG)
-        logging.getLogger("jira-cli").setLevel(logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, force=True, format='%(levelname)s - %(name)s - %(message)s')
+    else:
+        # Ensure basicConfig is called with INFO level even if not verbose
+        logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(name)s - %(message)s')
 
     config = ctx.obj["config"]
 
     try:
+        # Import BEFORE setting logger levels to ensure proper initialization
+        from src.mcp_atlassian.jira.config import JiraConfig as MCPJiraConfig
         from src.mcp_atlassian.jira.client import JiraClient
 
-        # JiraClient will use JiraConfig.from_env() to read environment variables
-        # Proxy handling for internal services is done in JiraClient.__init__
+        # CRITICAL: Set logger levels to override default WARNING level
+        # This must happen AFTER import but BEFORE calling from_env()
+        for logger_name in ["mcp-jira", "mcp-atlassian", "mcp-atlassian.jira",
+                            "mcp-atlassian.jira.config", "mcp-atlassian.jira.client"]:
+            logging.getLogger(logger_name).setLevel(logging.DEBUG if verbose else logging.INFO)
+
+        # Create JiraClient (which calls JiraConfig.from_env())
         client = JiraClient()
 
         # Get custom fields from Jira API
