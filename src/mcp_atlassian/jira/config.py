@@ -126,7 +126,16 @@ class JiraConfig:
         # Get the projects filter if provided
         projects_filter = os.getenv("JIRA_PROJECTS_FILTER")
 
-        # Proxy settings
+        # Handle proxy for internal services BEFORE reading proxy settings
+        # Must be done here (before JiraClient init) because requests library
+        # caches proxy settings early
+        logger.info(f"🔍 [CONFIG_DEBUG] About to call disable_proxy_for_internal_services()")
+        logger.info(f"   HTTP_PROXY before={os.getenv('HTTP_PROXY', 'NOT_SET')}")
+        disable_proxy_for_internal_services(url, "Jira")
+        logger.info(f"   HTTP_PROXY after={os.getenv('HTTP_PROXY', 'NOT_SET')}")
+
+        # Proxy settings - READ AFTER disable_proxy_for_internal_services()
+        # This ensures internal services have proxies removed from config
         http_proxy = os.getenv("JIRA_HTTP_PROXY", os.getenv("HTTP_PROXY"))
         https_proxy = os.getenv("JIRA_HTTPS_PROXY", os.getenv("HTTPS_PROXY"))
         no_proxy = os.getenv("JIRA_NO_PROXY", os.getenv("NO_PROXY"))
@@ -134,14 +143,6 @@ class JiraConfig:
 
         # Custom headers - service-specific only
         custom_headers = get_custom_headers("JIRA_CUSTOM_HEADERS")
-
-        # Handle proxy for internal services BEFORE creating client
-        # Must be done here (before JiraClient init) because requests library
-        # caches proxy settings early
-        logger.info(f"🔍 [CONFIG_DEBUG] About to call disable_proxy_for_internal_services()")
-        logger.info(f"   HTTP_PROXY before={os.getenv('HTTP_PROXY', 'NOT_SET')}")
-        disable_proxy_for_internal_services(url, "Jira")
-        logger.info(f"   HTTP_PROXY after={os.getenv('HTTP_PROXY', 'NOT_SET')}")
         logger.info(f"🔍 [CONFIG_DEBUG] JiraConfig.from_env() END")
 
         return cls(

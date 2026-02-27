@@ -119,7 +119,13 @@ class ConfluenceConfig:
         # Get the spaces filter if provided
         spaces_filter = os.getenv("CONFLUENCE_SPACES_FILTER")
 
-        # Proxy settings
+        # Handle proxy for internal services BEFORE reading proxy settings
+        # Must be done here (before ConfluenceClient init) because requests library
+        # caches proxy settings early
+        disable_proxy_for_internal_services(url, "Confluence")
+
+        # Proxy settings - READ AFTER disable_proxy_for_internal_services()
+        # This ensures internal services have proxies removed from config
         http_proxy = os.getenv("CONFLUENCE_HTTP_PROXY", os.getenv("HTTP_PROXY"))
         https_proxy = os.getenv("CONFLUENCE_HTTPS_PROXY", os.getenv("HTTPS_PROXY"))
         no_proxy = os.getenv("CONFLUENCE_NO_PROXY", os.getenv("NO_PROXY"))
@@ -127,11 +133,6 @@ class ConfluenceConfig:
 
         # Custom headers - service-specific only
         custom_headers = get_custom_headers("CONFLUENCE_CUSTOM_HEADERS")
-
-        # Handle proxy for internal services BEFORE creating client
-        # Must be done here (before ConfluenceClient init) because requests library
-        # caches proxy settings early
-        disable_proxy_for_internal_services(url, "Confluence")
 
         return cls(
             url=url,
