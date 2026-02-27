@@ -382,6 +382,16 @@ def list_custom_fields(
     config = ctx.obj["config"]
 
     try:
+        # FIX: Disable proxy for internal Jira access
+        # Problem: no_proxy has .samsungds.net, but Python requests prioritizes HTTP_PROXY
+        # Solution: For Jira (internal), we need DIRECT connection like curl does
+        import os
+        os.environ['HTTP_PROXY'] = ''
+        os.environ['HTTPS_PROXY'] = ''
+        os.environ['http_proxy'] = ''
+        os.environ['https_proxy'] = ''
+        click.echo("CLI: Disabled proxy for internal Jira access (no_proxy contains .samsungds.net)", err=True)
+
         # Enable HTTP debugging to see actual network requests
         import http.client as http_client
         http_client.HTTPConnection.debuglevel = 1
