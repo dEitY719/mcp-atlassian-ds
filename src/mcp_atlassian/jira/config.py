@@ -14,6 +14,8 @@ from ..utils.oauth import (
 from ..utils.proxy import disable_proxy_for_internal_services
 from ..utils.urls import is_atlassian_cloud_url
 
+logger = logging.getLogger("mcp-jira")
+
 
 @dataclass
 class JiraConfig:
