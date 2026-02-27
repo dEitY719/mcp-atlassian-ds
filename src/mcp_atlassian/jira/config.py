@@ -77,7 +77,12 @@ class JiraConfig:
         Raises:
             ValueError: If required environment variables are missing or invalid
         """
+        # 🔍 DEBUG: Log entry point
+        logger.info("🔍 [CONFIG_DEBUG] JiraConfig.from_env() START")
+        logger.info(f"   HTTP_PROXY at entry={os.getenv('HTTP_PROXY', 'NOT_SET')}")
+
         url = os.getenv("JIRA_URL")
+        logger.info(f"   JIRA_URL={url}")
         if not url and not os.getenv("ATLASSIAN_OAUTH_ENABLE"):
             error_msg = "Missing required JIRA_URL environment variable"
             raise ValueError(error_msg)
@@ -131,7 +136,11 @@ class JiraConfig:
         # Handle proxy for internal services BEFORE creating client
         # Must be done here (before JiraClient init) because requests library
         # caches proxy settings early
+        logger.info(f"🔍 [CONFIG_DEBUG] About to call disable_proxy_for_internal_services()")
+        logger.info(f"   HTTP_PROXY before={os.getenv('HTTP_PROXY', 'NOT_SET')}")
         disable_proxy_for_internal_services(url, "Jira")
+        logger.info(f"   HTTP_PROXY after={os.getenv('HTTP_PROXY', 'NOT_SET')}")
+        logger.info(f"🔍 [CONFIG_DEBUG] JiraConfig.from_env() END")
 
         return cls(
             url=url,

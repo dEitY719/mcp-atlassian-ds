@@ -35,14 +35,28 @@ def disable_proxy_for_internal_services(url: str, service_name: str = "service")
         >>> disable_proxy_for_internal_services("https://jira.samsungds.net/", "Jira")
         # Disables HTTP_PROXY for direct connection to internal Jira
     """
+    # 🔍 DEBUG: Log all input parameters
+    logger.info(f"🔍 [PROXY_DEBUG] disable_proxy_for_internal_services() called")
+    logger.info(f"   url={url}")
+    logger.info(f"   service_name={service_name}")
+    logger.info(f"   Before: HTTP_PROXY={os.getenv('HTTP_PROXY', 'NOT_SET')}")
+
     if url and ".samsungds.net" in url:
-        logger.debug(
-            f"Detected internal {service_name} service (.samsungds.net). "
-            "Disabling proxy for direct connection."
-        )
+        logger.info(f"✅ [PROXY_DEBUG] Detected internal {service_name} service (.samsungds.net)")
+        logger.info(f"   Clearing proxy environment variables...")
+
         # Clear all proxy environment variables
         # This ensures direct connection for internal .samsungds.net services
         os.environ["HTTP_PROXY"] = ""
         os.environ["HTTPS_PROXY"] = ""
         os.environ["http_proxy"] = ""
         os.environ["https_proxy"] = ""
+
+        logger.info(f"✅ [PROXY_DEBUG] After: HTTP_PROXY={os.getenv('HTTP_PROXY', 'NOT_SET')}")
+        logger.info(
+            f"Detected internal {service_name} service (.samsungds.net). "
+            "Disabling proxy for direct connection."
+        )
+    else:
+        logger.info(f"❌ [PROXY_DEBUG] NOT internal service (no .samsungds.net in URL)")
+        logger.info(f"   HTTP_PROXY remains: {os.getenv('HTTP_PROXY', 'NOT_SET')}")

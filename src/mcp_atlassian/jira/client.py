@@ -44,7 +44,11 @@ class JiraClient:
         """
         # Load configuration from environment variables if not provided
         # Note: Proxy handling for internal services is done in JiraConfig.from_env()
+        logger.info("🔍 [CLIENT_DEBUG] JiraClient.__init__() START")
+        logger.info(f"   HTTP_PROXY at init start={os.getenv('HTTP_PROXY', 'NOT_SET')}")
         self.config = config or JiraConfig.from_env()
+        logger.info(f"   HTTP_PROXY after from_env={os.getenv('HTTP_PROXY', 'NOT_SET')}")
+        logger.info(f"   config.url={self.config.url}")
 
         # Initialize the Jira client based on auth type
         if self.config.auth_type == "oauth":
@@ -73,6 +77,8 @@ class JiraClient:
                 verify_ssl=self.config.ssl_verify,
             )
         elif self.config.auth_type == "pat":
+            logger.info(f"🔍 [CLIENT_DEBUG] Auth type=PAT")
+            logger.info(f"   HTTP_PROXY before Jira() call={os.getenv('HTTP_PROXY', 'NOT_SET')}")
             logger.debug(
                 f"Initializing Jira client with Token (PAT) auth. "
                 f"URL: {self.config.url}, "
@@ -84,6 +90,8 @@ class JiraClient:
                 cloud=self.config.is_cloud,
                 verify_ssl=self.config.ssl_verify,
             )
+            logger.info(f"   HTTP_PROXY after Jira() call={os.getenv('HTTP_PROXY', 'NOT_SET')}")
+            logger.info(f"   Session proxies={self.jira._session.proxies}")
         else:  # basic auth
             logger.debug(
                 f"Initializing Jira client with Basic auth. "
