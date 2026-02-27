@@ -385,10 +385,19 @@ def list_custom_fields(
         from src.mcp_atlassian.jira.client import JiraClient
 
         # JiraClient will use JiraConfig.from_env() to read environment variables
+        click.echo("=== CLI DEBUG: Creating JiraClient ===", err=True)
         client = JiraClient()
 
+        # DEBUG: Check client configuration and session headers
+        click.echo(f"CLI DEBUG: client.config.url = {client.config.url}", err=True)
+        click.echo(f"CLI DEBUG: client.config.auth_type = {client.config.auth_type}", err=True)
+        click.echo(f"CLI DEBUG: Session headers = {dict(client.jira._session.headers)}", err=True)
+        click.echo("=== CLI DEBUG: END CONFIG CHECK ===\n", err=True)
+
         # Get custom fields from Jira API
+        click.echo("CLI DEBUG: Calling client.jira.get_all_custom_fields()...", err=True)
         fields = client.jira.get_all_custom_fields()
+        click.echo(f"CLI DEBUG: Got {len(fields)} fields from API\n", err=True)
 
         # Filter by search keyword if provided
         if search:
