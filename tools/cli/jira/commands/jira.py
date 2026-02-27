@@ -141,35 +141,47 @@ def create_issue(
     config = ctx.obj["config"]
 
     try:
-        # Import JiraClient here to avoid circular imports
-        from src.mcp_atlassian.jira.issues import IssuesMixin
+        from src.mcp_atlassian.jira.client import JiraClient
 
-        # Create client (IssuesMixin extends JiraClient with issue operations)
-        client = IssuesMixin()
+        # Create JiraClient (uses config from environment)
+        client = JiraClient()
 
-        # Create the issue using the backend implementation
-        created_issue = client.create_issue(
-            project_key=project,
-            summary=summary,
-            issue_type=type,
-            description=description,
-            assignee=assignee if assignee else None,
-        )
+        # Prepare issue fields
+        fields = {
+            "project": {"key": project},
+            "summary": summary,
+            "issuetype": {"name": type},
+        }
+
+        # Add optional fields
+        if description:
+            fields["description"] = description
+        if assignee:
+            fields["assignee"] = {"name": assignee}
+
+        # Create the issue using atlassian-python-api
+        created_key = client.jira.create_issue(fields=fields)
+
+        if not created_key:
+            raise click.ClickException("Failed to create issue - no key returned")
+
+        # Get the created issue details
+        issue_data = client.jira.issue(created_key)
 
         # Format and display the result
         issue_dict = {
-            "key": created_issue.key,
-            "summary": created_issue.summary,
-            "type": created_issue.issue_type,
-            "status": created_issue.status,
-            "url": created_issue.url,
+            "key": issue_data.get("key"),
+            "summary": issue_data.get("fields", {}).get("summary"),
+            "type": issue_data.get("fields", {}).get("issuetype", {}).get("name"),
+            "status": issue_data.get("fields", {}).get("status", {}).get("name"),
+            "url": issue_data.get("self"),
         }
 
         click.echo(
             OutputFormatter.format(
                 {
                     "status": "success",
-                    "message": f"Issue created successfully",
+                    "message": f"Issue created successfully: {created_key}",
                     "issue": issue_dict,
                 },
                 format_type=format,
@@ -229,35 +241,36 @@ def read_issue(
     config = ctx.obj["config"]
 
     try:
-        from src.mcp_atlassian.jira.issues import IssuesMixin
+        from src.mcp_atlassian.jira.client import JiraClient
 
-        # Create client (IssuesMixin extends JiraClient with issue operations)
-        client = IssuesMixin()
+        # Create JiraClient (uses config from environment)
+        client = JiraClient()
 
-        # Parse fields - convert comma-separated string to list
-        field_list = [f.strip() for f in fields.split(",") if f.strip()] if fields else None
+        # Get the issue from Jira API using atlassian-python-api
+        issue_data = client.jira.issue(issue_key)
 
-        # Get the issue from Jira API
-        issue = client.get_issue(
-            issue_key=issue_key,
-            fields=field_list if field_list else None,
-        )
+        if not issue_data:
+            raise click.ClickException(f"Issue {issue_key} not found")
 
         # Format the issue data for output
         issue_dict = {
-            "key": issue.key,
-            "summary": issue.summary,
-            "type": issue.issue_type,
-            "status": issue.status,
-            "assignee": issue.assignee,
-            "created": issue.created,
-            "updated": issue.updated,
-            "url": issue.url,
+            "key": issue_data.get("key"),
+            "summary": issue_data.get("fields", {}).get("summary"),
+            "type": issue_data.get("fields", {}).get("issuetype", {}).get("name"),
+            "status": issue_data.get("fields", {}).get("status", {}).get("name"),
+            "assignee": issue_data.get("fields", {}).get("assignee", {}).get("displayName"),
+            "created": issue_data.get("fields", {}).get("created"),
+            "updated": issue_data.get("fields", {}).get("updated"),
+            "url": issue_data.get("self"),
         }
 
         # Add additional fields if requested
-        if field_list and hasattr(issue, "fields"):
-            issue_dict["requested_fields"] = issue.fields
+        if fields:
+            field_list = [f.strip() for f in fields.split(",") if f.strip()]
+            issue_dict["requested_fields"] = {
+                f: issue_data.get("fields", {}).get(f)
+                for f in field_list
+            }
 
         click.echo(
             OutputFormatter.format(
