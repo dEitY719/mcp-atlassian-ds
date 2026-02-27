@@ -392,6 +392,11 @@ def list_custom_fields(
         click.echo("=== CLI DEBUG: Creating JiraClient ===", err=True)
         client = JiraClient()
 
+        # TEST: Change User-Agent to curl-like value (in case firewall blocks python-requests)
+        click.echo("CLI DEBUG: Changing User-Agent to curl...", err=True)
+        client.jira._session.headers['User-Agent'] = 'curl/7.85.0'
+        click.echo(f"CLI DEBUG: Updated User-Agent = {client.jira._session.headers.get('User-Agent')}", err=True)
+
         # DEBUG: Check client configuration and session headers
         click.echo(f"CLI DEBUG: client.config.url = {client.config.url}", err=True)
         click.echo(f"CLI DEBUG: client.config.auth_type = {client.config.auth_type}", err=True)
